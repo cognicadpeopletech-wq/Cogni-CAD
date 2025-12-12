@@ -1,0 +1,36 @@
+:root {
+  --bg-dark: #0f1115;
+  --bg-panel: #181b21;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --text-main: #eef2ff;
+  --text-muted: #94a3b8;
+  --border: #2d3748;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}

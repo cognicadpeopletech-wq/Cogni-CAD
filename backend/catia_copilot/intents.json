@@ -1,0 +1,472 @@
+{
+  "Close All CATIA Files": {
+    "script": "CloseCATIA.vbs",
+    "description": "Close all open CATIA documents and end CATIA sessions --— Approximate execution time 2 sec",
+    "examples": [
+      "close all catia files",
+      "close every CATIA document",
+      "exit CATIA and close everything",
+      "shutdown CATIA files",
+      "close all open catia documents",
+      "close every file in catia",
+      "end all catia sessions",
+      "terminate all CATIA windows",
+      "close all parts and drawings in CATIA",
+      "exit the CATIA application",
+      "close all active CATIA documents now",
+      "close all CATIA sessions and save changes",
+      "force close all CATIA files"
+    ]
+  },
+  "Macro Link Replace (Drawings and CATIA Files)": {
+    "script": "MacroLinkReplace.vbs",
+    "description": "Open a 2D drawing and link or re-link it to the correct 3D part file (CATScript). Automatically finds matching 3D model and updates drawing references —--— Approximate execution time 2 sec",
+    "examples": [
+      "link current drawing to its 3D part",
+      "link this 2D drawing to corresponding 3D model",
+      "attach 3D part to open drawing",
+      "map drawing views to 3D part file",
+      "replace drawing reference with 3D part",
+      "replace drawing-to-part link for open sheet",
+      "update drawing link to matching part file",
+      "find 3D model for this drawing and link it",
+      "auto-link drawing to 3D model",
+      "auto-detect and attach 3D part to drawing",
+      "synchronize drawing with its 3D part",
+      "synchronize current drawing with part file",
+      "relink drawing views to correct part",
+      "relink open drawing to 3D model by part number",
+      "relink drawing using part number",
+      "relink drawing using file name",
+      "batch relink drawings to parts in folder",
+      "batch replace drawing links with parts",
+      "replace broken drawing links with found parts",
+      "repair drawing links to their 3D models",
+      "update drawing references from part folder",
+      "update drawing references using search path",
+      "link drawing view to specific model face",
+      "match drawing projection to corresponding 3D model",
+      "find and link part by drawing view name",
+      "link drawing to part with same part number",
+      "link drawing to part with matching file name",
+      "link drawing to latest version of 3D model",
+      "force replace drawing link with selected part",
+      "preview links then replace drawing references",
+      "dry-run relink drawing to 3D parts (no changes)",
+      "auto-search part in workspace and link drawing",
+      "link drawing to part from selected folder",
+      "update drawing link and save drawing",
+      "relink drawing and update view attachment",
+      "replace drawing link using path mapping",
+      "synchronize all links in current drawing",
+      "fix drawing references to external part files",
+      "resolve missing drawing links by finding parts"
+    ]
+  },
+  "View frame on /off in drawing": {
+    "script": "ViewFrame.vbs",
+    "description": "Toggle the drawing frame (view frame) visibility on or off —--— Approximate execution time 2 sec",
+    "examples": [
+      "toggle view frame in drawing",
+      "turn on view frame",
+      "turn off view frame",
+      "switch view frame visibility",
+      "enable view frame",
+      "disable view frame",
+      "show drawing frame",
+      "hide drawing frame",
+      "view frame on off",
+      "toggle drawing border/frame",
+      "set drawing view frame visible",
+      "remove view frame from drawing"
+    ]
+  },
+  "Drawings views lock and unlock in drawing": {
+    "script": "LockandUnlock.vbs",
+    "description": "Lock or unlock drawing views to prevent or allow edits —--— Approximate execution time 2 sec",
+    "examples": [
+      "lock drawing views",
+      "unlock drawing views",
+      "toggle lock on drawing views",
+      "freeze drawing views",
+      "unfreeze drawing views",
+      "protect drawing views from editing",
+      "release locks on drawing views",
+      "apply view lock to all views",
+      "remove view lock from all views",
+      "lock all drawing projection views",
+      "unlock all drawing projection views",
+      "enable edit protection on views"
+    ]
+  },
+  "Swap the BackGround": {
+    "script": "SwapBackGround.vbs",
+    "description": "Swap between background and drawing view modes or toggle background display —--— Approximate execution time 3 sec",
+    "examples": [
+      "swap the background",
+      "swap background and view in drawing",
+      "switch to background view",
+      "change from background to view",
+      "toggle background and view",
+      "swap between drawing view and background",
+      "switch drawing background mode",
+      "toggle drawing background",
+      "set background mode on",
+      "set background mode off",
+      "switch display between view and background"
+    ]
+  },
+  "Macro link replace": {
+    "script": "MacroLinkReplace.vbs",
+    "description": "Link a 2D drawing sheet to its corresponding 3D part file and replace/update links (VBScript version) —--— Approximate execution time 2 sec",
+    "examples": [
+      "Macro link replace",
+      "link this 2D drawing to its corresponding 3D part model",
+      "identify the 3D part file that matches this drawing view",
+      "find the 3D CAD model associated with this technical drawing",
+      "establish connection between drawing and 3D part",
+      "retrieve the 3D part file linked to this drawing",
+      "match drawing projection to correct 3D model",
+      "create mapping between drawing dimensions and 3D model features",
+      "check if 3D model and drawing share the same part number",
+      "verify 3D updates reflect in 2D drawing",
+      "synchronize 2D drawing with 3D part file",
+      "update drawing references when 3D part file is revised",
+      "link drawing view to the correct model face",
+      "associate drawing dimensions with model parameters",
+      "automatically replace drawing-to-part links"
+    ]
+  },
+  "3D Rectangle with 2 Pockets": {
+    "script": "Generate3DRectangleWith2Pockets.vbs",
+    "description": "Generate a 3D rectangular block with two circular pockets/holes/sockets as specified —--— Approximate execution time 2 sec",
+    "examples": [
+      "3D rectangle with 2 pockets",
+      "create 3d rectangle with 2 pockets",
+      "generate a 3d block with two circular holes",
+      "make 3d rectangular model with 2 sockets",
+      "draw 3d rectangle having two circles",
+      "build 3d rectangle with two cutouts",
+      "design 3d rectangular part with 2 holes",
+      "create 3d rectangle with 2 sockets",
+      "generate rectangular body with two circular sockets",
+      "draw rectangle with 2 socket holes in 3d",
+      "make rectangular 3d model with two circles",
+      "build 3d rectangle part with two circle pockets",
+      "design 3d rectangular solid with 2 circles",
+      "create rectangular block with two pockets",
+      "generate 3D rectangle and add two circular pockets",
+      "make 3D box with 2 through-holes",
+      "create rectangular model with two blind pockets",
+      "3D rectangle with two countersunk pockets",
+      "create 3D rectangle and drill two holes"
+    ]
+  },
+  "Apply General Tolerances_ISO2768": {
+    "script": "apply_general_tolerances_ISO2768.vbs",
+    "description": "Automatically apply ISO 2768 general tolerances to all applicable linear dimensions in drawings —--— Approximate execution time 4 sec",
+    "examples": [
+      "apply general tolerances ISO2768",
+      "apply ISO 2768 tolerances to drawing",
+      "automatically apply ISO 2768 general tolerances",
+      "set ISO2768 tolerances on all linear dimensions",
+      "apply standard general tolerances as per ISO2768",
+      "assign ISO 2768 tolerance class to dimensions",
+      "add ISO2768 tolerance to drawing dimensions",
+      "standardize tolerances using ISO 2768",
+      "apply general tolerance rules ISO2768",
+      "update drawing with ISO 2768 tolerances",
+      "implement ISO2768 tolerance scheme",
+      "apply ISO 2768 to current drawing"
+    ]
+  },
+  "Apply ISO 20457 Tolerances": {
+    "script": "ApplyISO20457Tolerances.vbs",
+    "description": "Apply plastic moulding tolerances automatically to CATIA drawings using ISO 20457 standard —--— Approximate execution time 6 sec",
+    "examples": [
+      "apply ISO 20457 tolerances",
+      "apply plastic moulding tolerances automatically",
+      "set ISO 20457 standard tolerances in drawing",
+      "implement predefined tolerances for plastic parts",
+      "apply tolerance values to all dimensions per ISO20457",
+      "standardize tolerances as per iso 20457",
+      "apply geometric and dimensional tolerances to drawing",
+      "add plastic part tolerances to drawing",
+      "use ISO 20457 to set tolerance values",
+      "update drawing with ISO 20457 tolerances",
+      "apply ISO20457 to current drawing",
+      "assign moulding tolerance classes ISO20457"
+    ]
+  },
+  "Open Catia Application": {
+    "script": "OpenCatia.vbs",
+    "description": "This Will Open the Catia automatically —--— Approximate execution time 16 sec",
+    "examples": [
+      "Open Catia Application",
+      "open catia application"
+    ]
+  },
+  "Diagonal Holes": {
+    "script": "diagonal_topology_dynamic.py",
+    "description": "Generate plates or blocks with diagonal holes offset from corners —--— Approximate execution time 4 sec",
+    "examples": [
+      "Make a 1000x500x40 mm plate, 6 holes on the diagonals, offset 75 mm from every corner.",
+      "Can you generate an 800×400×50 mm plate with 4 diagonal holes offset 100 mm from the corners?",
+      "Give me an 800×400×20 mm block with 5 diagonal holes, each 6 mm diameter, offset 60 mm.",
+      "4 diagonal holes, block size 650x300x25, 80 mm offset.",
+      "Generate 10 diagonal holes on a 400x400x50 mm plate, offset each 40 mm from corner.",
+      "Diagonal pattern: 5 holes, 950x450x50 mm, hole diameter 14 mm, start 100 mm from the edges.",
+      "Insert 8 diagonal holes, block size 500x250x18 mm, holes are 10 mm wide, 45 mm from corners.",
+      "Diagonal holes in a 1200×800×60 mm slab, 6 holes, diameter 20 mm, offset 90 mm.",
+      "Diagonal layout: 7 holes in 700x350x40 mm plate, holes 8 mm, each 65 mm from corners.",
+      "Place 11 diagonal holes (diameter 12 mm) on a 1200x500x30 mm block offset 80 mm.",
+      "Add 3 large diagonal holes (25 mm) to a 400x400x50 mm plate, 110 mm offset.",
+      "Set up a diagonal holes pattern—9 holes, 750x370x43 mm, holes at 96 mm from all corners.",
+      "For a 600x600x60 mm square, drill 8 diagonal holes, each hole 9 mm, offset 120 mm.",
+      "I want diagonal holes: 6 holes, each 7 mm, in a 900x300x42 mm block, placed 70 mm from the corners.",
+      "Give me a diagonal hole arrangement, 10 holes on a 1000x320x28 mm plate, 55 mm offset, 8 mm holes."
+    ]
+  },
+  "Equidistant Holes": {
+    "script": "equidistant_holes_dynamic.py",
+    "description": "Create blocks or plates with equidistant holes centered from the midpoint —--— Approximate execution time 2 sec",
+    "examples": [
+      "Make a plate of 300×200×16 mm with 4 equidistant holes from the midpoint, 75 mm apart.",
+      "How about 8 holes in a 350x200x16 mm plate, each 50 mm from center?",
+      "I need a 500x250x20 mm plate, 10 holes equidistant from the center, 12 mm diameter, 30 mm spacing.",
+      "Give me a 900x150x20 mm slab, put 6 equidistant holes along the length, 60 mm intervals.",
+      "Can you generate 5 equidistant holes on a 600x200x25 mm plate? Holes are 15 mm diameter, 80 mm apart.",
+      "Create a block 400x400x22 mm, 12 holes laid out equidistant (radius 100 mm from midpoint).",
+      "10 equal spaced holes, 1000x300x30 mm block, diameter 11 mm, placed at 95 mm intervals from the center.",
+      "Set up 7 holes, plate size 750x380x15, center spacing 48 mm, diameter 10 mm.",
+      "Equidistant pattern: 9 holes in a 900x400x40 mm plate, spacing 55 mm, all holes are 9 mm.",
+      "Add 13 holes all around the midpoint, block size 1000x250x35 mm, spacing 60 mm.",
+      "8 holes, each 14 mm wide, precisely 77 mm apart, on a 520x180x19 mm plate.",
+      "I want 15 evenly-spaced holes in a 1200x600x45 mm slab, each 13 mm, center spacing 80 mm.",
+      "For a 600x400x30 mm plate, make 4 holes, 90 mm apart, all centered.",
+      "Create 12 equidistant holes along the length of a 700x120x18 mm plate, 45 mm intervals.",
+      "Put 10 equidistant holes, diameter 12 mm, in an 800x220x28 mm plate, each 50 mm from the center."
+    ]
+  },
+  "Circular Pattern Holes": {
+    "script": "circular_topology_dynamic.py",
+    "description": "Block or plate with holes on a circular pattern of given diameter or radius —--— Approximate execution time 3 sec",
+    "examples": [
+      "Create circular topology: 10 holes on a 70 mm diameter circle for a 400x300x40 mm block.",
+      "Make a circular pattern of 6 holes (8 mm) arranged radially on a 50 mm radius circle, plate size 300x200x20 mm.",
+      "Generate radial holes: 12 holes around a 90 mm diameter path on a 500×350×25 mm block.",
+      "Add circular holes pattern: 16 holes on a 120 mm diameter circle in a 600x400x30 mm plate.",
+      "I need a 450×350×40 mm plate with a circular array of 20 holes on a 100 mm radius ring.",
+      "Place 5 radial holes on a 40 mm diameter circle for a 250x250x15 mm block.",
+      "Circular pattern: 14 holes evenly spaced on a 160 mm diameter circle, block size 700x400x32 mm.",
+      "Arrange 18 holes on a 90 mm radius circular path for a 900x500x40 mm block.",
+      "Could you create 8 circular holes on a 70 mm circle diameter for a 300x300x20 mm plate?",
+      "Make radial hole pattern: 10 holes in a 110 mm diameter circle on a 650×400×50 mm slab.",
+      "Add a circular topology of 22 holes arranged on a 200 mm radius circle for an 800×800×30 mm plate.",
+      "Generate a circular hole path: 6 holes (12 mm) on a 45 mm radius in a 280x260x20 mm block.",
+      "Circular pattern of holes: 30 holes on a 150 mm diameter circle, 1000x600x40 mm block.",
+      "Put 9 radial holes around a 55 mm radius circle, centered on a 350×300×16 mm plate.",
+      "Create a circle of 12 holes (10 mm) on a 180 mm diameter circular layout for an 850×450×25 mm block."
+    ]
+  },
+  "Perimeter Holes": {
+    "script": "perimeter_topology_dynamic.py",
+    "description": "Plates or blocks with holes around the perimeter offset from the edges —--— Approximate execution time 3 sec",
+    "examples": [
+      "Make a 300×200×16 mm plate with 12 holes around the perimeter offset 20 mm from the edges.",
+      "Can you create an 800×400×50 mm plate, 14 border holes with 25 mm inward offset?",
+      "16 perimeter holes, each 8 mm diameter, on a 600x300x20 mm plate with 15 mm offset.",
+      "Add 10 holes around the perimeter of a 500×300×25 mm block, 20 mm offset.",
+      "Perimeter layout: place 20 holes, 700x200x17 mm plate, 12 mm from edge.",
+      "How about 18 holes around a 1000x350x28 mm block, holes are 14 mm, 18 mm inward offset.",
+      "Draw 15 perimeter holes, diameter 10 mm, 22 mm in from the edge, size 650x390x23 mm.",
+      "Set 9 holes on each long edge, 3 on each short edge, offset 33 mm for all, plate 900x400x16 mm.",
+      "I want 24 tiny 5 mm holes all around the edge, block size 1200x600x44 mm, offset 20 mm.",
+      "Make a rectangle with 10 perimeter holes, each 11 mm, offset 50 mm, plate size 1000x200x22 mm.",
+      "For a 450x300x28 mm panel, add 12 border holes, 25 mm in, diameter 13 mm.",
+      "Frame of 16 holes, evenly spaced around 800x400x18 mm plate, all holes 9 mm, offset 20 mm.",
+      "20 holes on the edge of a 1400x750x34 mm slab, 42 mm inward, each hole is 17 mm.",
+      "Draw a perimeter of holes: 8 on top, 8 on bottom, 6 on each side, all holes 7 mm, offset 23 mm, block 600x400x14 mm.",
+      "Add 12 perimeter holes, 10 mm from each edge, plate is 700x300x23 mm."
+    ]
+  },
+  "Create Cylinder": {
+    "script": "create_cylinder_interactive.py",
+    "description": "Create a cylindrical part in CATIA. Accepts diameter and height (mm) via natural language, shorthand, or CLI-style flags. Validates inputs and creates a circle sketch on the XY plane then pads it to the requested height. —--— Approximate execution time 2 sec",
+    "examples": [
+      "create cylinder diameter 80 height 150",
+      "please make a cylinder with diameter 80 mm and height 150 mm",
+      "make a cylinder: d 80 h 150",
+      "create a cylinder: dia=80 height=150",
+      "create cylinder diameter:80 height:150",
+      "cylinder 80 150",
+      "cyl 80x150",
+      "cyl d:80 h:150",
+      "create cylinder d 80 h 150",
+      "create cylinder diameter 80mm height 150mm",
+      "create cylinder diameter 80.5 height 150.25",
+      "make a cylinder diameter=100 height=200",
+      "create cylinder  Ø80 H150",
+      "create cylinder dia 80 height 150",
+      "create cylinder diameter eighty height one fifty",
+      "create cylinder d=80 h=150",
+      "make cylinder 80 by 150",
+      "cylinder dia:80 h:150",
+      "create cylinder diameter-80 height-150",
+      "create cylinder diameter 80; height 150",
+      "create cylinder diameter=80mm height=150mm",
+      "create a cylinder -d 80 -h 150",
+      "create cylinder --diameter 80 --height 150",
+      "python create_cylinder_interactive.py --diameter 80 --height 150",
+      "python create_cylinder_interactive.py \"create cylinder diameter 80 height 150\"",
+      "make cylinder 80mm x 150mm",
+      "create cyl 80 150",
+      "cylinder 80mm 150mm",
+      "create cylinder diameter: 80 height: 150",
+      "create cylinder d 80.0 h 150.0",
+      "make a cylinder diameter 120 height 300",
+      "create cylinder diameter 50 height 20",
+      "create cylinder diameter 0 height 100",
+      "create cylinder diameter -10 height 50",
+      "create cylinder diameter 80",
+      "create cylinder height 150",
+      "create cylinder 80x",
+      "create cylinder x150",
+      "create cylinder diameter eighty",
+      "create dia 20 mm height 40 mm",
+      "create cylinder dia 20mm height 40mm",
+      "create cylinder dia=20mm height=40mm",
+      "create cylinder d 20mm h 40mm",
+      "make a cylinder dia 20 mm h 40 mm",
+      "cyl dia:20mm height:40mm",
+      "cylinder dia 20 height 40",
+      "create cylinder with dia 20 and height 40",
+      "make cylinder dia20 height40",
+      "create cylinder d=20mm h=40mm",
+      "cylinder d 20 h 40",
+      "cyl d:20mm h:40mm",
+      "create cyl dia 20mm ht 40mm",
+      "create cylinder diameter 20 mm height 40 mm",
+      "make cylinder with diameter 20mm and height 40mm"
+    ]
+  },
+  "Circular Disk": {
+    "script": "circular_disk_dynamic.py",
+    "description": "Create circular disks or cylinders based on diameter and thickness inputs — Approximate execution time 2 sec",
+    "examples": [
+      "Create disk diameter 180 thickness 12 AND 3 holes on disk: 4 diameter at (0,0), 5 diameter at (30,40), 6 diameter at (10,10)",
+      "Create disk diameter 220 thickness 15 WITH 3 HOLES on disk: 16 diameter at (0,0), 20 diameter at (30,40), 10 diameter at (60,60)",
+      "Create disk: diameter 200 mm, thickness 20 mm, holes on disk at (0,0,10), (30,30,8), (-40,20,6)",
+      "Create disk diameter 150 thickness 10 WITH 1 HOLE on disk: 12 diameter at (0,0)",
+      "Create disk diameter 300 thickness 25 WITH 4 HOLES on disk: 8 diameter at (50,0), 8 diameter at (-50,0), 8 diameter at (0,50), 8 diameter at (0,-50)",
+      "Create disk diameter 100 thickness 8 WITH 2 HOLES on disk: 6 diameter at (10,10), 6 diameter at (-10,-10)",
+      "Create disk diameter 250 thickness 18 WITH 5 HOLES on disk: 10 dia at (60,0), 10 dia at (30,52), 10 dia at (-30,52), 10 dia at (-60,0), 10 dia at (0,-65)",
+      "Create disk diameter 175 thickness 12 WITH 3 HOLES on disk: 5 dia at (20,0), 7 dia at (-20,0), 9 dia at (0,25)",
+      "Create disk diameter 90 thickness 6 WITH 3 HOLES on disk: 4 dia at (0,0), 4 dia at (30,0), 4 dia at (15,26)",
+      "Create disk diameter 400 thickness 30 WITH 6 HOLES on disk: 12 dia at (70,0), 12 dia at (42,56), 12 dia at (-42,56), 12 dia at (-70,0), 12 dia at (-42,-56), 12 dia at (42,-56)",
+      "Create disk diameter 130 thickness 9 WITH 2 HOLES on disk: 10 dia at (0,20), 6 dia at (0,-20)",
+      "Create disk diameter 210 thickness 14 WITH 3 HOLES on disk: 15 dia at (0,0), 10 dia at (40,40), 8 dia at (-40,40)"
+    ]
+  },
+  "Circular Disk with Squred holes": {
+    "script": "circular_squared_disk.py",
+    "description": "Create circular disks (cylinders) from diameter and thickness inputs and cut N square holes (side in mm). Approximate execution time: ~2s (varies with CATIA).",
+    "examples": [
+      "Create a 100 mm diameter disk thickness 5 mm with square holes 10 on disk at (0,0) and (30,30)",
+      "Make disk 100mm dia disk, T=5mm, square holes side 10 on disk at (0,0) & (30,30)",
+      "100 mm dia disk, 5 mm thick disk. Square cutouts 10mm on disk at (0,0),(30,30).",
+      "Please produce circular disk diameter 100 thickness 5 with two square holes 10 mm located on disk at coordinates (0,0) and (30,30)",
+      "disk diameter:100 mm; thickness:5; square holes on disk: 10 at (0,0) and (30,30)",
+      "100 dia disk 5 mm thick with square holes 10mm on disk @ (0,0) (30,30)",
+      "create a disk, dia 100mm, thick 5mm; add square holes of side 10 on disk at (0,0) and (30,30)",
+      "Make a 100mm diameter disk (cylinder) x 5mm high with square pockets (side=10) on disk centered at (0,0) and (30,30)",
+      "100 mm diameter disk, thickness 5, add square holes (10) on disk at coordinates (0,0) and (30,30)",
+      "Create disk radius 50 mm thickness 5 mm with square holes side 10 on disk at (0,0) and (30,30)",
+      "Create a 100mm disk, thickness 5mm; square-holes on disk:10mm at (0,0) & (30,30)",
+      "Please create disk: dia=100mm T=5mm, squares 10mm on disk at (0,0),(30,30)",
+      "100 mm dia disk; 5 mm thick; place 10mm square holes on disk at x=0 y=0 and x=30 y=30"
+    ]
+  },
+  "Diagonal On Disk": {
+    "script": "diagonal_on_disk.py",
+    "description": "Place a line of diagonal holes across the disk. Specify disk diameter, thickness, number of holes, radial/offset spacing, hole diameter and diagonal orientation.",
+    "examples": [
+      "Create 6 diagonal holes on a diameter 100 disk thickness 5 offset 2 dia 5 orientation 45 on disk",
+      "Create disk diameter 120 thickness 6 WITH diagonal 4 holes on disk offset 10 dia 6 orientation -30",
+      "Create 8 diagonal holes across diameter 220 disk thickness 10 spacing 5 dia 8 orientation 90",
+      "Create disk diameter 150 thickness 8 diagonal 5 holes on disk spacing 12 dia 4 orientation 30 start_at_center true",
+      "Create disk diameter 200 thickness 12 WITH diagonal 3 holes on disk offset 0 dia 10 orientation 0 center_aligned false",
+      "Create 10 diagonal holes on diameter 300 disk thickness 20 spacing 8 dia 6 orientation 135 offset 5",
+      "Create diagonal pattern on disk diameter 180 thickness 10 count 7 spacing 6 dia 3 orientation -45 mirror true",
+      "Create disk diameter 250 thickness 15 diagonal 9 holes on disk spacing 4 dia 5 orientation 60 start_offset 10",
+      "Create 4 diagonal holes on diameter 90 disk thickness 6 offset 1 dia 2 orientation 22.5 symmetric true",
+      "Create diagonal 12 holes across diameter 400 disk thickness 25 spacing 10 dia 12 orientation 120 offset 15"
+    ]
+  },
+  "Equidistant On Disk": {
+    "script": "equidistant_on_disk.py",
+    "description": "Create holes equally spaced along a line (e.g., along the X axis) on the disk surface. Specify disk diameter, thickness, count, spacing, and hole diameter.",
+    "examples": [
+      "Create 5 equidistant holes along x on disk diameter 120 Thickness 6 spacing 20 dia 6",
+      "Create disk diameter 200 thickness 8 WITH 7 equidistant holes along x on disk spacing 15 dia 5",
+      "Create disk diameter 150 thickness 10 WITH 3 equidistant holes along x on disk spacing 25 dia 8",
+      "Create 9 equidistant holes along x on disk diameter 300 thickness 12 spacing 30 dia 10 center_origin true",
+      "Create disk diameter 100 thickness 5 WITH 4 equidistant holes along x on disk spacing 12 dia 3 offset_y 10",
+      "Create 6 equidistant holes along x on disk diameter 220 thickness 14 spacing 18 dia 6 start_x -40",
+      "Create equidistant 8 holes along x on disk diameter 180 thickness 8 spacing 10 dia 4 mirrored true",
+      "Create disk diameter 250 thickness 16 WITH 10 equidistant holes along x on disk spacing 22 dia 7 offset_y -15",
+      "Create 2 equidistant holes along x on disk diameter 90 thickness 6 spacing 40 dia 5 center_origin false",
+      "Create equidistant holes count 12 along x on disk diameter 400 thickness 20 spacing 25 dia 12 start_x 0 offset_y 0"
+    ]
+  },
+  "Perimeter On Disk": {
+    "script": "perimeter_on_disk.py",
+    "description": "Place holes evenly around the disk perimeter (circumferential). Specify number of holes, disk diameter, thickness, radial offset from perimeter (optional), and hole diameter.",
+    "examples": [
+      "Create 12 holes around perimeter on disk diameter 200 Thickness 8 offset 15 dia 5",
+      "Create disk diameter 300 thickness 12 WITH 6 perimeter holes on disk offset 10 dia 10",
+      "Create 20 holes around perimeter on disk diameter 180 thickness 6 offset 5 dia 4",
+      "Create perimeter 8 holes on disk diameter 250 thickness 15 offset 0 dia 12 start_angle 0",
+      "Create disk diameter 150 thickness 10 WITH 16 perimeter holes on disk offset 8 dia 3 start_angle 22.5",
+      "Create 24 perimeter holes on disk diameter 400 thickness 20 offset 20 dia 6 staggered false",
+      "Create disk diameter 100 thickness 5 WITH 6 perimeter holes on disk offset 5 dia 8 start_angle 30",
+      "Create 10 holes around perimeter on disk diameter 220 thickness 14 offset 12 dia 7 start_angle -15",
+      "Create perimeter 36 holes on disk diameter 500 thickness 30 offset 25 dia 10 start_angle 0 symmetric true",
+      "Create disk diameter 180 thickness 9 WITH 14 perimeter holes on disk offset 3 dia 5 start_angle 10 alternating_offset true"
+    ]
+  },
+  "optimize_design": {
+    "script": "rl_optimizer",
+    "description": "Goal-based optimization requests (minimize weight, optimize for X load)",
+    "examples": [
+      "Design the lightest baseplate for 10 kg load",
+      "Optimize this mount for minimum weight under 10kg",
+      "Find the best design to support 10 kilograms",
+      "Goal-based design: minimize weight for 10 kg",
+      "Search design space for lightest baseplate that can carry 10 kg"
+    ]
+  },
+  "create_cylinder_assembly": {
+    "script": "catia_create_parts_dynamic.py",
+    "description": "Create rectangle + cylinder assembly with explicit params",
+    "examples": [
+      "Create a rectangular plate 200 by 150 with cylinder diameter 50 and height 120",
+      "Make a plate 180x120x6 and a cylinder 45x50"
+    ]
+  },
+  "perimeter_holes": {
+    "script": "perimeter_SQURED_on_disk.py",
+    "description": "Perimeter hole patterns on a disk",
+    "examples": [
+      "Create 12 equally spaced holes on a 100 mm disk",
+      "Perimeter square holes on disk diameter 80 thickness 4"
+    ]
+  },
+  "hi": {
+    "script": "hi.vbs",
+    "description": "hi",
+    "examples": [
+      "hi"
+    ]
+  }
+}

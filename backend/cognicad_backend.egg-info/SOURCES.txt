@@ -1,0 +1,12 @@
+pyproject.toml
+app/__init__.py
+app/core/interpreter.py
+app/core/models.py
+app/routes/convert.py
+app/routes/generate.py
+app/routes/interpret.py
+cognicad_backend.egg-info/PKG-INFO
+cognicad_backend.egg-info/SOURCES.txt
+cognicad_backend.egg-info/dependency_links.txt
+cognicad_backend.egg-info/requires.txt
+cognicad_backend.egg-info/top_level.txt

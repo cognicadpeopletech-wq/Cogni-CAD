@@ -1,0 +1,15 @@
+[project]
+name = "cognicad-backend"
+version = "0.1.0"
+description = "Backend for CogniCAD"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "numpy",
+    "trimesh",
+    "python-multipart",
+    "cadquery",
+    "sentence-transformers"
+]
+requires-python = ">=3.9"

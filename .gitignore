@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Backend Logs and Data
+backend/logs/
+*.log
+
+# Generated Content (Uploads and Outputs)
+backend/generated_files/
+backend/static_files/uploads/
+backend/outputs/
+
+# VS Code
+.vscode/
+
+__pycache__/
+*.pyc
