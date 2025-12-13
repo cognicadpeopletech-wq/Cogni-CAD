@@ -96,7 +96,7 @@ def create_cylinder_in_catia(diameter: float, height: float):
         print(f"ERROR: Failed to create geometry in CATIA: {e}")
         return 1
     
-    print(f"SUCCESS: Cylinder created Ø{diameter} mm × {height} mm")
+    # print(f"SUCCESS: Cylinder created Ø{diameter} mm × {height} mm")
     return 0
 
 def main():

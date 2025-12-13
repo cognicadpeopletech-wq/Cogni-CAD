@@ -75,7 +75,7 @@ def get_params():
 def safe_save(doc, path):
     try:
         doc.SaveAs(path)
-        print("Saved:", path)
+        # print("Saved:", path)
     except Exception as e:
         print("Warning: SaveAs failed:", e)
 
@@ -244,13 +244,13 @@ def main():
 
     try:
         product_doc.SaveAs(PROD)
-        print("Saved assembly:", PROD)
+        # print("Saved assembly:", PROD)
     except Exception as e:
-        print("Save warning:", e)
+        # print("Save warning:", e)
 
     pythoncom.CoUninitialize()
 
-    print("\nCATIA model OPEN, VISIBLE, and NO POPUPS.")
+    # print("\nCATIA model OPEN, VISIBLE, and NO POPUPS.")
 
 
 if __name__ == "__main__":

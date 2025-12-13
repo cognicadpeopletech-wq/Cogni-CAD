@@ -233,7 +233,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 "show the uploaded model in the inhouse viewer", "visualize glb", "visualise glb",
                 "visualize model", "visualise model", "visualize the converted step file",
                 "visualise the converted step file", "visualize converted", "visualise converted",
-                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "load dirt bike model", "load car model", "load truck model"];
+                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "load dirt bike model", "load car model", "load truck model","implode model"];
 
             if (glb_keywords.some(k => lowerCmd.includes(k))) {
                 if (pendingModelUrl.current) {
@@ -550,11 +550,11 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                     <div className="brand-section">
                         <div className="brand-logo-title" style={{ gap: '12px' }}>
                             <div className="brand-text">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div className="brand-title" style={{ fontSize: '1.8rem', lineHeight: '1', fontFamily: '"Times New Roman", Times, serif', fontWeight: 'bold', color: '#488ffa' }}>PeopleCAD</div>
-                                    <img src="Screenshot 2025-12-05 234645.png" alt="CogniCAD" className="brand-logo-img" style={{ height: '28px' }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0px' }}>
+                                    <div className="brand-title">PeopleCAD</div>
+                                    <img src="image (2).png" alt="PeopleCAD" className="brand-logo-img" style={{ height: '43px' }} />
                                 </div>
-                                <div className="brand-tagline" style={{ fontSize: '0.8rem', marginTop: '2px', fontStyle: 'italic', color: '#888888', fontFamily: 'sans-serif' }}>Design Smarter. Build Faster</div>
+                                <div className="brand-tagline">Design Smarter. Build Faster</div>
                             </div>
                         </div>
                     </div>
@@ -567,6 +567,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                         </button>
                     </div>
                 </div>
+ 
 
                 {/* Chat Area */}
                 <div className="chat-history">
@@ -769,7 +770,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                                         // CATIA mode: Show only BOM and Add Task
                                         <>
                                             <div className="pm-item" onClick={() => { bomInputRef.current?.click(); setShowMenu(false); }}>
-                                                <i className="fas fa-file-alt" style={{ color: '#0ea5e9', marginRight: '8px' }}></i> Upload BOM
+                                                <i className="fas fa-file-alt" style={{ color: '#0ea5e9', marginRight: '8px' }}></i> Upload CADPart
                                             </div>
                                             <div className="pm-item" onClick={() => { handleAddTask(); setShowMenu(false); }}>
                                                 <i className="fas fa-plus-circle" style={{ color: '#0ea5e9', marginRight: '8px' }}></i> Add Task
@@ -820,7 +821,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                     <div className="cad-model-status">
                         <i className="fas fa-cube" style={{ color: 'var(--accent-blue)', fontSize: '1.1rem' }}></i>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Current CAD model:</span>
+                            <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Current CAD engine:</span>
                             <span style={{ color: '#d4ffe4', fontWeight: 600, fontSize: '0.95rem' }}>
                                 {mode === 'CATIA_COPILOT' ? 'CATIA' : 'In-house CAD'}
                             </span>

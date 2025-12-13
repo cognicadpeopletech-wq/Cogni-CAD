@@ -98,7 +98,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-app = FastAPI(title="CogniCAD AI Co-Pilot")
+app = FastAPI(title="PeopleCAD AI Co-Pilot")
 
 app.add_middleware(
     CORSMiddleware,
@@ -466,7 +466,7 @@ async def run_command(request: Request):
                      if out_json: return JSONResponse(out_json)
                 except: pass
 
-                msg = f"✅ Executed Command Successfully \n"
+                msg = f"✅ Task Completed Successfully \n"
                 if out: msg += f"Output:\n{out}\n"
                 if err: msg += f"Stderr:\n{err}\n"
                 if error: msg = f"❌ Error: {error}"

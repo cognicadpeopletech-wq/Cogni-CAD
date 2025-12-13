@@ -75,7 +75,7 @@ def create_block(length, width, thickness, holes):
         catia = Dispatch("CATIA.Application")
         catia.Visible = True
     except Exception as e:
-        print(f"ERROR: Could not connect to CATIA: {e}")
+        # print(f"ERROR: Could not connect to CATIA: {e}")
         return
 
     try:
@@ -120,24 +120,24 @@ def create_block(length, width, thickness, holes):
                 ref = part.CreateReferenceFromObject(sk)
                 sf.AddNewPad(ref, float(thickness))
             except Exception as e:
-                print(f"ERROR: AddNewPad failed even with reference: {e}")
+                # print(f"ERROR: AddNewPad failed even with reference: {e}")
                 # Try Extrude fallback? No, Pad is better.
                 raise e
         
         part.Update()
 
     except Exception as e:
-        print(f"ERROR: Failed to create geometry: {e}")
+        # print(f"ERROR: Failed to create geometry: {e}")
         return
 
     # summary
-    print("\n==============================")
-    print("PARAMETRIC BLOCK CREATED")
-    print(f"Block: {length} x {width} x {thickness}")
-    print(f"Total Holes: {len(holes)}")
-    for i, (x, y, d) in enumerate(holes, 1):
-        print(f"Hole {i}: X={x}, Y={y}, Dia={d}")
-    print("==============================\n")
+    # print("\n==============================")
+    # print("PARAMETRIC BLOCK CREATED")
+    # print(f"Block: {length} x {width} x {thickness}")
+    # print(f"Total Holes: {len(holes)}")
+    # for i, (x, y, d) in enumerate(holes, 1):
+    #     print(f"Hole {i}: X={x}, Y={y}, Dia={d}")
+    # print("==============================\n")
 
 
 def main(argv=None):

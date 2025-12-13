@@ -25,7 +25,7 @@ def load_params_from_file(params_path: str):
 def safe_save_doc(doc, path):
     try:
         doc.SaveAs(path)
-        print("Saved:", path)
+        # print("Saved:", path)
     except Exception as e:
         print("Warning: SaveAs failed for", path, e)
 
@@ -327,6 +327,6 @@ if __name__ == "__main__":
     try:
         if os.path.exists(args.params):
             os.remove(args.params)
-            print("Temporary params file deleted.")
+            # print("Temporary params file deleted.")
     except Exception as e:
         print("Warning: Could not delete temp params file:", e)

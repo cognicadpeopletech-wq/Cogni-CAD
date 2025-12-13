@@ -61,7 +61,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-app = FastAPI(title="CogniCAD AI Co-Pilot")
+app = FastAPI(title="PeopleCAD AI Co-Pilot")
 
 # CORS for frontend
 app.add_middleware(
@@ -113,7 +113,7 @@ async def index(request: Request, new_cap: str = None):
     if templates and (TEMPLATES_DIR / "index.html").exists():
         caps = nlp.list_intents() if nlp else []
         return templates.TemplateResponse("index.html", {"request": request, "capabilities": caps, "new_cap": new_cap})
-    return "CogniCAD Backend Running. Use Frontend to interact."
+    return "PeopleCAD Backend Running. Use Frontend to interact."
 
 @main_router.post("/run_command")
 async def run_command(request: Request):
@@ -354,7 +354,7 @@ async def run_command(request: Request):
                       return JSONResponse(out_json)
             except: pass
 
-            msg = f"✅ Executed Command Successfully\n"
+            msg = f"✅ Task Completed Successfully\n"
             if out: msg += f"Output:\n{out}\n"
             if err: msg += f"Stderr:\n{err}\n"
             if error: msg = f"❌ Error: {error}"

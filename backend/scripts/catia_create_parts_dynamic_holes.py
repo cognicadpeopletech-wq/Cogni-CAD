@@ -81,7 +81,7 @@ def get_params():
 def safe_save(doc, path):
     try:
         doc.SaveAs(path)
-        print("Saved:", path)
+        # print("Saved:", path)
     except Exception as e:
         print("Warning: Save failed:", e)
 
@@ -370,7 +370,7 @@ def main():
     # Save assembly
     try:
         product_doc.SaveAs(PROD)
-        print("Saved assembly:", PROD)
+        # print("Saved assembly:", PROD)
     except:
         pass
 
@@ -380,7 +380,7 @@ def main():
     except:
         pass
 
-    print("\nCATIA model OPEN, VISIBLE, NO POPUPS.")
+    # print("\nCATIA model OPEN, VISIBLE, NO POPUPS.")
     pythoncom.CoUninitialize()
 
 

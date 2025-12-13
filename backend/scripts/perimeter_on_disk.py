@@ -158,9 +158,9 @@ def main():
             part.Update()
             made += 1
 
-        print(f"Done: disk D={D}, holes={made} on radius={radius}")
-        if args.cmd:
-            print(f"Command: {args.cmd}")
+        # print(f"Done: disk D={D}, holes={made} on radius={radius}")
+        # if args.cmd:
+        #     print(f"Command: {args.cmd}")
 
     except Exception as e:
         print(f"ERROR: Failed to create geometry: {e}")
