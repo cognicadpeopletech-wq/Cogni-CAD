@@ -233,7 +233,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 "show the uploaded model in the inhouse viewer", "visualize glb", "visualise glb",
                 "visualize model", "visualise model", "visualize the converted step file",
                 "visualise the converted step file", "visualize converted", "visualise converted",
-                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "load dirt bike model", "load car model", "load truck model","implode model"];
+                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "load dirt bike model", "load car model", "load truck model","implode model","load the model", "implode the model"];
 
             if (glb_keywords.some(k => lowerCmd.includes(k))) {
                 if (pendingModelUrl.current) {
