@@ -690,6 +690,20 @@ const ThreeCanvas = ({ mode }) => {
         onResetView={handleResetView}
         onViewChange={handleViewChange}
       />
+
+      {/* Branding Overlay for Full Screen Mode */}
+      <div className="maximize-branding-overlay">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="brand-title">PeopleCAD</div>
+          <img src="Screenshot 2025-12-05 234645.png" alt="CogniCAD" className="brand-logo-img" style={{ height: '32px' }} />
+          {/* Optional: Add logo img if needed, user only showed text in request but previous had logo. 
+                  User said "my title shuould have to come in top left with the below dialouge". 
+                  Image shows just text. keeping just text for now to match "font style" request. 
+              */}
+        </div>
+        <div className="brand-tagline">Design Smarter. Build Faster</div>
+      </div>
+
       {orientationCubeVisible && (
         <OrientationCube
           onViewChange={handleViewChange}

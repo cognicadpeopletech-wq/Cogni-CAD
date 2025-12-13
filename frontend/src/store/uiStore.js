@@ -90,7 +90,7 @@ const useUIStore = create((set) => ({
   }),
 
   // Viewer Settings
-  orientationCubeVisible: true,
+  orientationCubeVisible: false,
   setOrientationCubeVisible: (visible) => set({ orientationCubeVisible: visible }),
 
   // Model Rotation (Text Command)

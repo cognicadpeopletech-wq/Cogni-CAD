@@ -551,10 +551,10 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                         <div className="brand-logo-title" style={{ gap: '12px' }}>
                             <div className="brand-text">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div className="brand-title" style={{ fontSize: '1.8rem', lineHeight: '1', fontFamily: '"Times New Roman", Times, serif', fontWeight: 'bold', color: '#488ffa' }}>PeopleCAD</div>
+                                    <div className="brand-title">PeopleCAD</div>
                                     <img src="Screenshot 2025-12-05 234645.png" alt="CogniCAD" className="brand-logo-img" style={{ height: '28px' }} />
                                 </div>
-                                <div className="brand-tagline" style={{ fontSize: '0.8rem', marginTop: '2px', fontStyle: 'italic', color: '#888888', fontFamily: 'sans-serif' }}>Design Smarter. Build Faster</div>
+                                <div className="brand-tagline">Design Smarter. Build Faster</div>
                             </div>
                         </div>
                     </div>
