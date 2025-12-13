@@ -102,6 +102,11 @@ def route_explicit_command(command_raw: str, base_dir: Path):
         script_to_run = COLOR_SCRIPT_NAME
         script_flags = ["--cmd", command_raw]
         
+    # B) Load Latest / Persistent Workflow (High Priority)
+    elif matches(r"load.*(?:current|existing|recent).*model"):
+          script_to_run = "open_latest_file.py"
+          script_flags = []
+        
     # ... rest of existing logic ...
         
     # B) BOM
@@ -230,8 +235,57 @@ def route_explicit_command(command_raw: str, base_dir: Path):
     # G) Gear / Fixed Robust
     elif matches(r"\b(gear|instances)\b") and matches(r"\b(pocket|pad)\b"):
          script_to_run = "file_fixed_robust.py"
-         f, _ = build_flags_for_fixed_robust({}, command_raw)
-         script_flags = f
+         
+         # Inline Logic to extract parameters for file_fixed_robust.py 
+         # (Replaces build_flags_for_fixed_robust to allow Modify/Use-Active)
+         flags = []
+         
+         # Helper to extract value
+         def get_val(text, patterns):
+             for pat in patterns:
+                 m = re.search(pat, text, re.IGNORECASE)
+                 if m: return m.group(1)
+             return None
+
+         # Radius
+         rad = get_val(command_raw, [r"radius\s*(\d+(\.\d+)?)", r"dia(?:meter)?\s*(\d+(\.\d+)?)"])
+         if rad:
+             flags.append("--circle-radius")
+             flags.append(str(float(rad)) if "radius" in command_raw else str(float(rad)/2))
+
+         # Pad Height
+         ph = get_val(command_raw, [r"pad\s*height\s*(\d+(\.\d+)?)", r"height\s*(\d+(\.\d+)?)"])
+         if ph:
+             flags.append("--pad-height")
+             flags.append(ph)
+
+         # Pocket Depth
+         pd = get_val(command_raw, [r"pocket\s*depth\s*(\d+(\.\d+)?)", r"depth\s*(\d+(\.\d+)?)"])
+         if pd:
+             flags.append("--pocket-depth")
+             flags.append(pd)
+
+         # Instances
+         inst = get_val(command_raw, [r"instances\s*(\d+)", r"(\d+)\s*instances"])
+         if inst:
+             flags.append("--pattern-instances")
+             flags.append(inst)
+
+         # Center Hole
+         ch = get_val(command_raw, [r"center\s*pocket\s*dia(?:meter)?\s*(\d+(\.\d+)?)", r"center\s*hole\s*dia(?:meter)?\s*(\d+(\.\d+)?)"])
+         if ch:
+             flags.append("--center-hole-dia")
+             flags.append(ch)
+
+         # Modify Mode
+         if matches(r"\bmodify\b") or matches(r"\bupdate\b") or matches(r"\bchange\b"):
+             flags.append("--use-active")
+
+         script_flags = flags
+         if not flags:
+             # Fallback if inline extraction fails
+             f, _ = build_flags_for_fixed_robust({}, command_raw)
+             script_flags = f
 
     # X) Manifold Routing
     elif matches(r"\bmanifold\b"):

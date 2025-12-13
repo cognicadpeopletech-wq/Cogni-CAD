@@ -17,6 +17,8 @@ import json
 import argparse
 from win32com.client import Dispatch, VARIANT, gencache
 import pythoncom, traceback, sys, time
+import os
+from datetime import datetime
 from pycatia import catia
  
  
@@ -221,10 +223,27 @@ def main():
         part.InWorkObject = sketch1
         part.Update()
  
-        shape_factory = part.ShapeFactory
-        pad1 = shape_factory.AddNewPad(sketch1, float(params['pad_height']))
+        part.InWorkObject = sketch1
         part.Update()
-        print('Pad created.')
+  
+        shape_factory = part.ShapeFactory
+        pad1 = None
+        
+        # Check if pad already exists (modify mode)
+        if args.use_active:
+             try:
+                 pad1 = body.Shapes.Item("Pad.1")
+                 # Update Pad Height
+                 pad1.FirstLimit.Dimension.Value = float(params['pad_height'])
+                 print(f"Updated Pad.1 height to {params['pad_height']}")
+             except Exception:
+                 pass # Create new if not found
+                 
+        if pad1 is None:
+            pad1 = shape_factory.AddNewPad(sketch1, float(params['pad_height']))
+            print('Pad created.')
+            
+        part.Update()
  
         # 2) Second sketch at Z = pad height (or given)
         sketch2 = sketches.Add(plane_xy)
@@ -276,30 +295,45 @@ def main():
         pocket1 = None
         created = False
         pocket_depth = float(params['pocket_depth'])
-        try:
-            pocket1 = shape_factory.AddNewPocket(sketch2, -pocket_depth)
-            part.Update()
-            created = pocket1 is not None
-        except Exception:
-            created = False
- 
+        
+        if args.use_active:
+             try:
+                 pocket1 = body.Shapes.Item("Pocket.1")
+                 # Modify depth
+                 # Usually pocket 1 is the main pocket
+                 # Check direction? Assuming default direction logic matches creation
+                 # Just update limit
+                 pocket1.FirstLimit.Dimension.Value = pocket_depth # Often positive value for reversed
+                 print(f"Updated Pocket.1 depth to {pocket_depth}")
+                 created = True
+             except Exception:
+                 pass
+
         if not created:
             try:
-                pocket1 = shape_factory.AddNewPocket(sketch2, pocket_depth)
+                pocket1 = shape_factory.AddNewPocket(sketch2, -pocket_depth)
                 part.Update()
-                try:
-                    pocket1.Reverse = True
-                    created = True
-                except Exception:
-                    created = True  # created but might not flip
+                created = pocket1 is not None
             except Exception:
                 created = False
- 
-        if not created or pocket1 is None:
-            print('ERROR: Failed to create pocket in reversed direction.')
-            return
- 
-        print('Pocket created (reversed direction attempted).')
+     
+            if not created:
+                try:
+                    pocket1 = shape_factory.AddNewPocket(sketch2, pocket_depth)
+                    part.Update()
+                    try:
+                        pocket1.Reverse = True
+                        created = True
+                    except Exception:
+                         created = True  # created but might not flip
+                except Exception:
+                    created = False
+     
+            if not created or pocket1 is None:
+                print('ERROR: Failed to create pocket in reversed direction.')
+                return
+     
+            print('Pocket created (reversed direction attempted).')
  
         # 4) Circular pattern
         circPattern = None
@@ -387,6 +421,27 @@ def main():
         except Exception:
             pass
  
+        # --- AUTO-SAVE LOGIC ---
+        if not args.use_active:
+            try:
+                # Script is in backend/scripts, we want backend/CATParts
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                backend_dir = os.path.dirname(script_dir)
+                save_dir = os.path.join(backend_dir, "CATParts")
+                
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+                
+                # Generate filename with timestamp
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"Gear_Cylinder_{timestamp}.CATPart"
+                save_path = os.path.join(save_dir, filename)
+                
+                part_doc.SaveAs(save_path)
+                print(f"Part saved to: {save_path}")
+            except Exception as e:
+                print(f"Error auto-saving part: {e}")
+
         print('Script finished OK.')
     except Exception:
         print('Unhandled exception in main:')
