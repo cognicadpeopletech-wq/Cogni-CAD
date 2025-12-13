@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: cognicad-backend
+Version: 0.1.0
+Summary: Backend for CogniCAD
+Requires-Python: >=3.9
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: pydantic
+Requires-Dist: numpy
+Requires-Dist: trimesh
+Requires-Dist: python-multipart

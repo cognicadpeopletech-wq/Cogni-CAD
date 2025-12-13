@@ -1,0 +1,686 @@
+/* ===== RESTORED APP.CSS (User Provided + Preserved Merges) ===== */
+
+/* 1. ESSENTIAL VARIABLES (Required by React Components) */
+:root {
+  --accent-gold: #ffb300;
+  --accent-blue: #39bafc;
+  --bg-dark: #000000;
+  --panel-bg: #111111;
+  --text-color: #ececec;
+  --muted: #b0b0b0;
+  --input-bg: #2f2f2f;
+  --card-bg: #1e1e1e;
+  --card-border: #333;
+}
+
+/* 2. BASE RESET */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-color);
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* 3. MAIN LAYOUT CONTAINER */
+.app-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/background.png');
+  background-color: var(--bg-dark);
+  /* Fallback */
+  background-size: cover;
+  background-position: center;
+}
+
+.main-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: row;
+  padding: 24px;
+  /* Four sides spacing to show background */
+  box-sizing: border-box;
+}
+
+/* 4. LEFT PANEL (CHAT) */
+.chat-panel-container {
+  flex: 0 0 40%;
+  width: 40%;
+  max-width: 40%;
+  min-width: 380px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  box-sizing: border-box;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.chat-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(20, 20, 20, 0.98);
+  border-radius: 20px 0 0 20px;
+  /* Split radius */
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: none;
+  border-bottom: none;
+  border-left: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+/* 5. RIGHT PANEL (CANVAS) */
+.canvas-area {
+  flex: 1;
+  /* Effectively 60% */
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.viewer-container {
+  flex: 1;
+  background: rgba(46, 46, 46, 0.6);
+  border-radius: 0 20px 20px 0;
+  /* Split radius */
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 6. CHAT COMPONENT STYLES (Header, Messages, Input) */
+.new-panel-header {
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand-section,
+.brand-logo-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo-img {
+  height: 32px;
+  width: auto;
+}
+
+.brand-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.brand-tagline {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.chat-history {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-msg {
+  padding: 10px 14px;
+  border-radius: 8px;
+  max-width: 90%;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.chat-msg.bot {
+  background: rgba(255, 255, 255, 0.05);
+  color: #d4ffe4;
+  align-self: flex-start;
+}
+
+.chat-msg.user {
+  background: rgba(57, 186, 252, 0.2);
+  color: white;
+  align-self: flex-end;
+}
+
+/* Input Area */
+.new-input-area {
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plus-menu-container {
+  position: relative;
+  width: 100%;
+}
+
+.plus-menu-dropdown {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.pm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: #ddd;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.pm-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pm-item i {
+  color: var(--accent-gold);
+  width: 20px;
+  text-align: center;
+}
+
+.input-bar-pill {
+  display: flex;
+  align-items: center;
+  background: var(--input-bg);
+  border-radius: 20px;
+  padding: 5px 12px;
+}
+
+.pill-input-field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 8px;
+  outline: none;
+  font-size: 1rem;
+  resize: none;
+  /* Prevent manual resize */
+  font-family: inherit;
+}
+
+.plus-btn,
+.pill-send-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.pill-send-btn {
+  background: var(--accent-gold);
+  color: black;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* CAD Model Status (MISSING PART RESTORED) */
+.cad-model-status {
+  margin-top: 4px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 7. UTILITIES & ICONS */
+.expand-btn,
+.right-expand-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.right-expand-btn {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+/* 7.1 VIEWER CONTROLS (Orientation Cube & Toolbar) */
+.viewer-horizontal-toolbar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 60;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(14, 14, 14, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(4px);
+}
+
+.vt-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.vt-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.vt-icon {
+  font-size: 1.1rem;
+}
+
+.orientation-cube {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  background: transparent;
+  /* No background for container */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  overflow: visible;
+  /* Allow cube to rotate freely */
+  pointer-events: none;
+  /* Let clicks pass through if needed, but cube needs interaction */
+}
+
+/* Re-enable pointer events for the canvas inside cube */
+.orientation-cube canvas {
+  pointer-events: auto;
+}
+
+/* 8. RESPONSIVE */
+@media (max-width: 900px) {
+  .main-layout {
+    flex-direction: column;
+  }
+
+  .chat-panel-container {
+    width: 100%;
+    height: 50vh;
+  }
+
+  .canvas-area {
+    width: 100%;
+    height: 50vh;
+  }
+}
+
+/* Attachment Preview */
+/* Attachment Preview - Premium Style (Fixed) */
+/* Attachment Preview - ChatGPT Style */
+.attachment-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  /* Very subtle card bg */
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.attachment-preview .icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #606060;
+  /* Solid grey background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.upload-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: s3 1s infinite linear;
+}
+
+@keyframes s3 {
+  100% {
+    transform: rotate(1turn)
+  }
+}
+
+/* Remove success specific styling as it's no longer needed */
+
+.attachment-preview .file-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  margin-right: 12px;
+}
+
+.attachment-preview .name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  line-height: 1.2;
+}
+
+.attachment-preview .file-type {
+  font-size: 0.75rem;
+  color: #aaa;
+  line-height: 1.2;
+}
+
+.attachment-preview .close {
+  cursor: pointer;
+  color: #ff5555;
+  /* Bright red for remove */
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+  /* Circle bg for close? Or just icon */
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+}
+
+
+.attachment-preview .close {
+  margin-left: 8px;
+  /* Fixed gap instead of auto to keep it tight if needed, but auto is fine too */
+  cursor: pointer;
+  color: #ef4444;
+  /* Brighter red */
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.attachment-preview .close:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Upload Progress details */
+.upload-progress-container {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.upload-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: var(--accent-blue);
+  transition: width 0.3s ease;
+}
+
+/* 9. PANEL STATE OVERRIDES */
+/* Left Maximized (Chat Full Screen) */
+.app-container.left-maximized .chat-panel-container {
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.app-container.left-maximized .chat-wrapper {
+  border-radius: 20px;
+  /* Round all corners since it floats alone */
+  border-right: none;
+}
+
+.app-container.left-maximized .canvas-area {
+  display: none;
+}
+
+/* Right Maximized (Viewer Full Screen) */
+.app-container.right-maximized .chat-panel-container {
+  display: none;
+}
+
+.app-container.right-maximized .canvas-area {
+  width: 100%;
+}
+
+.app-container.right-maximized .viewer-container {
+  border-radius: 20px;
+}
+
+
+/* ================================================================================== */
+/* ===== PRESERVED STYLES (Merged from specific user request to keep existing) ===== */
+/* ================================================================================== */
+
+/* Theme Toggle Button (Missing in new snippet) */
+.theme-toggle-btn {
+  position: absolute;
+  top: 70px;
+  /* Shifted down slightly to not overlap with expand btn */
+  right: 30px;
+  /* Wait, user snippet put right-expand-btn at right:30, top:30. 
+     Let's put theme toggle at right:30, top: 80 or left side?
+     Old CSS had it at top:20, left:20.
+     User requested "Restore Wing HUD" but not specifically placement.
+     I will keep it Top-Left as per old CSS default for this button.
+  */
+  top: 30px;
+  left: 20px;
+
+  z-index: 2000;
+  background: rgba(80, 80, 80, 0.3);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(80, 80, 80, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.dark-mode .theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffd700;
+}
+
+/* Mode Footer */
+.mode-footer {
+  margin-top: 16px;
+  margin-left: 10px;
+}
+
+.current-mode-label {
+  font-size: 0.85rem;
+  color: #71717a;
+  display: flex;
+  align-items: center;
+}
+
+.mode-icon {
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+.mode-value:hover {
+  text-decoration: underline;
+}
+
+/* Optimization Cards */
+.opt-cards-container {
+  display: flex;
+  gap: 16px;
+  padding: 10px 0;
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.opt-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  min-width: 220px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.design-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.card-body {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #e4e4e7;
+}
+
+.param-row,
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.opt-generate-btn {
+  width: 100%;
+  margin-top: 16px;
+  background: var(--accent-gold);
+  color: black;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: filter 0.2s;
+}
+
+.opt-generate-btn:hover {
+  filter: brightness(1.1);
+}
+
+.action-btn-small {
+  transition: opacity 0.2s;
+  font-weight: 500;
+}
+
+.action-btn-small:hover {
+  opacity: 0.9;
+}

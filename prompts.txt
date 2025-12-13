@@ -1,0 +1,14 @@
+here the above code is weoking fine okay
+
+here you nned to fix some isisue okay 
+
+issue 1 : here if by default it execting the valus like i i dont mention the values it taken some default values okay 
+please dont take like that okay
+
+
+
+also add a buton for dark mode and light mode
+
+here the 75% of screen from the left  ui the 
+
+and her emy chtabot 
