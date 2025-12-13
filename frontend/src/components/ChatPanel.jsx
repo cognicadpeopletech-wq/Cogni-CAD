@@ -3,7 +3,7 @@ import useUIStore from '../store/uiStore';
 import { runCommand, uploadFile, convertFile, splitLeft, maximizeWindow } from '../api';
 
 const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) => {
-    const { messages, setMessages, addMessage, isLoading, setLoading, setLatestResult, uploadProgress, setUploadProgress, attachmentPreview, setAttachmentPreview, setWingMode, switchChatHistory, commandHistory, addToHistory, setRequestedView } = useUIStore();
+    const { messages, setMessages, addMessage, isLoading, setLoading, setLatestResult, uploadProgress, setUploadProgress, attachmentPreview, setAttachmentPreview, setWingMode, switchChatHistory, commandHistory, addToHistory } = useUIStore();
     const [input, setInput] = useState('');
     const [uploadedFile, setUploadedFile] = useState(null); // Keeps track of last uploaded file URL
     const [showMenu, setShowMenu] = useState(false);
@@ -91,93 +91,101 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
         let uploadSuccess = false;
 
         if (attachmentPreview) {
-            // Clear viewer immediately on new upload start
-            setLatestResult({ glb_url: null });
+            try {
+                // Clear viewer immediately on new upload start
+                setLatestResult({ glb_url: null });
 
-            setUploadProgress(0);
+                setUploadProgress(0);
 
-            // Simulate progress
-            const progressInterval = setInterval(() => {
-                setUploadProgress(prev => Math.min(prev + 10, 90));
-            }, 200);
+                // Simulate progress
+                const progressInterval = setInterval(() => {
+                    setUploadProgress(prev => Math.min(prev + 10, 90));
+                }, 200);
 
-            const res = await uploadFile(attachmentPreview.file, attachmentPreview.type);
+                const res = await uploadFile(attachmentPreview.file, attachmentPreview.type);
 
-            clearInterval(progressInterval);
-            setUploadProgress(100);
-            setTimeout(() => setUploadProgress(0), 1000);
+                clearInterval(progressInterval);
+                setUploadProgress(100);
+                // Instant transition to 'done' state
+                setUploadProgress(0);
 
-            if (res.url) {
-                uploadSuccess = true;
-                currentUploadedUrl = res.url;
-                currentUploadFilename = res.filename || attachmentPreview.name;
-                setUploadedFile(res.url); // Update state
+                if (res.url) {
+                    uploadSuccess = true;
+                    currentUploadedUrl = res.url;
+                    currentUploadFilename = res.filename || attachmentPreview.name;
+                    setUploadedFile(res.url); // Update state
 
-                // Logic Distribution based on Type
-                if (attachmentPreview.type === 'step') {
-                    // Check if command implies conversion. 
-                    const isConvertIntent = !cmdToSend.trim() || lowerCmd.includes('convert') || lowerCmd.includes('glb');
+                    // Logic Distribution based on Type
+                    if (attachmentPreview.type === 'step') {
+                        // Check if command implies conversion. 
+                        const isConvertIntent = !cmdToSend.trim() || lowerCmd.includes('convert') || lowerCmd.includes('glb');
 
-                    if (isConvertIntent) {
-                        // Start Conversion Flow
-                        setConversionProgress(0);
-                        const convInterval = setInterval(() => {
-                            setConversionProgress(prev => {
-                                if (prev >= 90) return prev;
-                                return prev + 5;
-                            });
-                        }, 200);
+                        if (isConvertIntent) {
+                            // Start Conversion Flow
+                            setConversionProgress(0);
+                            const convInterval = setInterval(() => {
+                                setConversionProgress(prev => {
+                                    if (prev >= 90) return prev;
+                                    return prev + 5;
+                                });
+                            }, 200);
 
-                        const convRes = await convertFile(currentUploadFilename);
+                            const convRes = await convertFile(currentUploadFilename);
 
-                        clearInterval(convInterval);
-                        setConversionProgress(100);
-                        setTimeout(() => setConversionProgress(0), 1000); // Hide bar after 1s
+                            clearInterval(convInterval);
+                            setConversionProgress(100);
+                            setTimeout(() => setConversionProgress(0), 1000); // Hide bar after 1s
 
-                        if (convRes.glb_url) {
-                            pendingModelUrl.current = convRes.glb_url;
+                            if (convRes.glb_url) {
+                                pendingModelUrl.current = convRes.glb_url;
 
-                            // Use original client-side filename for display
-                            const originalName = attachmentPreview.name || 'model';
-                            const baseName = originalName.lastIndexOf('.') !== -1 ? originalName.substring(0, originalName.lastIndexOf('.')) : originalName;
-                            const friendlyFilename = `${baseName}.glb`;
+                                // Use original client-side filename for display
+                                const originalName = attachmentPreview.name || 'model';
+                                const baseName = originalName.lastIndexOf('.') !== -1 ? originalName.substring(0, originalName.lastIndexOf('.')) : originalName;
+                                const friendlyFilename = `${baseName}.glb`;
 
-                            // Show success and download
-                            addMessage(`✅ Converted ${attachmentPreview.name} to GLB successfully.`, 'bot', {
-                                type: 'download_btn',
-                                url: convRes.glb_url,
-                                filename: friendlyFilename
-                            });
+                                // Show success and download
+                                addMessage(`✅ Converted ${attachmentPreview.name} to GLB successfully.`, 'bot', {
+                                    type: 'download_btn',
+                                    url: convRes.glb_url,
+                                    filename: friendlyFilename
+                                });
+                            } else {
+                                addMessage(`❌ Conversion failed: ${convRes.error || 'Unknown error'}`, 'bot');
+                            }
                         } else {
-                            addMessage(`❌ Conversion failed: ${convRes.error || 'Unknown error'}`, 'bot');
+                            // Uploaded but not converting?
+                            addMessage(`✅ Uploaded ${currentUploadFilename}. Say "convert" to process it.`, 'bot');
                         }
-                    } else {
-                        // Uploaded but not converting?
-                        addMessage(`✅ Uploaded ${currentUploadFilename}. Say "convert" to process it.`, 'bot');
                     }
-                }
-                else if (attachmentPreview.type === 'glb') {
-                    pendingModelUrl.current = res.url;
-                    const isLoadIntent = !cmdToSend.trim() || lowerCmd.includes('load') || lowerCmd.includes('show') || lowerCmd.includes('visualize') || lowerCmd.includes('display');
+                    else if (attachmentPreview.type === 'glb') {
+                        pendingModelUrl.current = res.url;
+                        const isLoadIntent = !cmdToSend.trim() || lowerCmd.includes('load') || lowerCmd.includes('show') || lowerCmd.includes('visualize') || lowerCmd.includes('display');
 
-                    if (isLoadIntent) {
-                        setLatestResult({ glb_url: res.url });
-                        addMessage('🚀 Loading model into viewer...', 'bot');
-                        setPanelState('right-maximized');
-                    } else {
-                        addMessage(`✅ Uploaded ${currentUploadFilename}. Say "load model" to view.`, 'bot');
+                        if (isLoadIntent) {
+                            setLatestResult({ glb_url: res.url });
+                            addMessage('🚀 Loading model into viewer...', 'bot');
+                            setPanelState('right-maximized');
+                        } else {
+                            addMessage(`✅ Uploaded ${currentUploadFilename}. Say "load model" to view.`, 'bot');
+                        }
                     }
-                }
 
-            } else {
-                addMessage(`❌ Error uploading file: ${res.error}`, 'bot');
+                } else {
+                    addMessage(`❌ Error uploading file: ${res.error}`, 'bot');
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                addMessage("❌ Error during upload process.", 'bot');
+            } finally {
+                // Clear attachment preview after processing (ALWAYS)
+                setAttachmentPreview(null);
+                setLoading(false);
             }
-
-            // Clear attachment preview after processing
-            setAttachmentPreview(null);
+        } else {
+            // No attachment, just stop loading if it was set
+            setLoading(false);
         }
-
-        setLoading(false);
 
         // 4. Handle Backend Command (Text Only)
         if (!attachmentPreview && cmdToSend.trim()) {
@@ -225,8 +233,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 "show the uploaded model in the inhouse viewer", "visualize glb", "visualise glb",
                 "visualize model", "visualise model", "visualize the converted step file",
                 "visualise the converted step file", "visualize converted", "visualise converted",
-                "visualize the recently converted step file", "visualize the recently converted step file"
-            ];
+                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "load dirt bike model", "load car model", "load truck model"];
 
             if (glb_keywords.some(k => lowerCmd.includes(k))) {
                 if (pendingModelUrl.current) {
@@ -237,16 +244,6 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 } else {
                     addMessage('⚠️ No model is pending to load. Upload/Convert a file first.', 'bot');
                 }
-                return;
-            }
-
-            // VIEW COMMANDS: "Top View", "Front View", "Show Left View", "Go to Bottom View"
-            const viewMatch = lowerCmd.match(/\b(top|bottom|front|back|left|right)\s+view\b/);
-            if (viewMatch) {
-                const viewDirection = viewMatch[1];
-                setRequestedView(viewDirection);
-                addMessage(`👀 Switching to ${viewDirection.charAt(0).toUpperCase() + viewDirection.slice(1)} View`, 'bot');
-                setLoading(false);
                 return;
             }
 
@@ -310,6 +307,38 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 setLoading(false);
                 return;
             }
+
+            // --- EXPLODE & COLOR (Local Intercept for Full Screen) ---
+            if (lowerCmd.includes("explode")) {
+                useUIStore.getState().setExplodeMode(true);
+                setPanelState('right-maximized'); // Expand to full screen
+                addMessage("💥 Explode View Active. Model expanded in full screen.", 'bot');
+                setLoading(false);
+                return;
+            }
+
+            if (lowerCmd.includes("color") || lowerCmd.includes("apply color")) {
+                useUIStore.getState().setColorMode(true);
+                setPanelState('right-maximized'); // Expand to full screen
+                addMessage("🎨 Color Analysis Mode Active. Model expanded in full screen.", 'bot');
+                setLoading(false);
+                return;
+            }
+
+            // --- VIEW CONTROL COMMANDS ---
+            const viewMatch = lowerCmd.match(/\b(top|bottom|front|back|left|right|rear|side)\s+view\b/);
+            if (viewMatch) {
+                let viewDirection = viewMatch[1];
+                if (viewDirection === 'rear') viewDirection = 'back';
+                if (viewDirection === 'side') viewDirection = 'right';
+
+                useUIStore.getState().setRequestedView(viewDirection);
+                setPanelState('right-maximized');
+                addMessage(` Switching to ${viewDirection.charAt(0).toUpperCase() + viewDirection.slice(1)} View`, 'bot');
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             // We pass 'uploadedFile' state which might persist from previous uploads
             const res = await runCommand(cmdToSend, { uploaded_file: uploadedFile });
@@ -510,17 +539,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
     };
 
     const handleClearChat = () => {
-        const welcomeText = mode === 'CATIA_COPILOT'
-            ? "Hello! I am your Catia Co-Pilot. How can I help you today"
-            : "Hello! I am your In House CogniCAD. How can I help you today";
-
-        setMessages([
-            {
-                id: 1,
-                text: welcomeText,
-                sender: "bot"
-            }
-        ]);
+        setMessages([]);
     };
 
     return (
@@ -532,7 +551,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                         <div className="brand-logo-title" style={{ gap: '12px' }}>
                             <div className="brand-text">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div className="brand-title" style={{ fontSize: '1.8rem', lineHeight: '1', fontFamily: '"Times New Roman", Times, serif', fontWeight: 'bold', color: '#b0b0b0' }}>CogniCAD</div>
+                                    <div className="brand-title" style={{ fontSize: '1.8rem', lineHeight: '1', fontFamily: '"Times New Roman", Times, serif', fontWeight: 'bold', color: '#488ffa' }}>PeopleCAD</div>
                                     <img src="Screenshot 2025-12-05 234645.png" alt="CogniCAD" className="brand-logo-img" style={{ height: '28px' }} />
                                 </div>
                                 <div className="brand-tagline" style={{ fontSize: '0.8rem', marginTop: '2px', fontStyle: 'italic', color: '#888888', fontFamily: 'sans-serif' }}>Design Smarter. Build Faster</div>
@@ -702,8 +721,23 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                     {/* Attachment Preview - Only show if not empty */}
                     {attachmentPreview && (
                         <div className="attachment-preview">
-                            <div className="icon"><i className="fas fa-file"></i></div>
-                            <div className="name">{attachmentPreview.name}</div>
+                            <div className="icon">
+                                {uploadProgress > 0 && uploadProgress < 100 ? (
+                                    <div className="upload-spinner"></div>
+                                ) : (
+                                    <i className="fas fa-file"></i>
+                                )}
+                            </div>
+                            <div className="file-info">
+                                <div className="name">{attachmentPreview.name}</div>
+                                <div className="file-type">File</div>
+                            </div>
+                            {/* Always show close button unless strictly loading? Usually shown so user can cancel. 
+                                User asked for 'loading then file'. Let's keep close button available appropriately. 
+                                Actually, standard is to allow cancel during load, but simpler to just show close when done? 
+                                Let's show close button ALWAYS for simplicity unless logic dictates otherwise. 
+                                previous code hid it during success. Now success is gone. 
+                            */}
                             <div className="close" onClick={handleRemoveAttachment} title="Remove attachment">
                                 <i className="fas fa-times-circle"></i>
                             </div>

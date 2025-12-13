@@ -71,7 +71,7 @@ def parse_args():
     p.add_argument('--pocket-depth', type=float, default=20.0)
     p.add_argument('--pattern-instances', type=int, default=96)
     p.add_argument('--pattern-spacing', type=float, default=3.75)
-    p.add_argument('--center-hole-dia', type=float, default=0.0)
+    p.add_argument('--center-hole-dia', type=float, default=8.0)
     p.add_argument('--debug', action='store_true')
     p.add_argument('--use-active', action='store_true', help='Use currently active CATIA PartDocument instead of creating a new one')
     return p.parse_args()

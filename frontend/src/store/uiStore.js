@@ -1,14 +1,12 @@
 import { create } from 'zustand';
 
 const useUIStore = create((set) => ({
-  messages: [
-    { id: 1, text: "Hello! I am your In House CogniCAD. How can I help you today", sender: 'bot' }
-  ],
+  messages: [],
 
   // Storage for separated histories
   chatHistory: {
-    'INHOUSE_CAD': [{ id: 1, text: "Hello! I am your In House CogniCAD. How can I help you today", sender: 'bot' }],
-    'CATIA_COPILOT': [{ id: 1, text: "Hello! I am your Catia Co-Pilot. How can I help you today", sender: 'bot' }]
+    'INHOUSE_CAD': [],
+    'CATIA_COPILOT': []
   },
 
   setMessages: (messages) => set({ messages }),
@@ -99,7 +97,11 @@ const useUIStore = create((set) => ({
   modelRotation: { x: 0, y: 0, z: 0 },
   setModelRotation: (rotation) => set({ modelRotation: rotation }),
 
-  // Camera View Requests (Smart Views)
+  // Camera View Control (Text Command)
+  targetView: null,
+  setTargetView: (view) => set({ targetView: view }),
+
+  // Smart Camera View Requests (Robust)
   requestedView: null,
   setRequestedView: (view) => set({ requestedView: view }),
 }));

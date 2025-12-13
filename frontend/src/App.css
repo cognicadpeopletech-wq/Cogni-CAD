@@ -36,7 +36,7 @@ body {
   display: flex;
   width: 100vw;
   height: 100vh;
-   background-image: url('/background.png');
+  background-image: url('/background.png');
   background-color: var(--bg-dark);
   /* Fallback */
   background-size: cover;
@@ -377,22 +377,115 @@ body {
 }
 
 /* Attachment Preview */
+/* Attachment Preview - Premium Style (Fixed) */
+/* Attachment Preview - ChatGPT Style */
 .attachment-preview {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px 12px;
-  border-radius: 6px;
-  margin-bottom: 8px;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  /* Very subtle card bg */
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 10px;
   color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.attachment-preview .icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #606060;
+  /* Solid grey background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.upload-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: s3 1s infinite linear;
+}
+
+@keyframes s3 {
+  100% {
+    transform: rotate(1turn)
+  }
+}
+
+/* Remove success specific styling as it's no longer needed */
+
+.attachment-preview .file-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  margin-right: 12px;
+}
+
+.attachment-preview .name {
+  font-weight: 600;
   font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  line-height: 1.2;
+}
+
+.attachment-preview .file-type {
+  font-size: 0.75rem;
+  color: #aaa;
+  line-height: 1.2;
 }
 
 .attachment-preview .close {
-  margin-left: auto;
   cursor: pointer;
-  color: #ff6b6b;
+  color: #ff5555;
+  /* Bright red for remove */
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+  /* Circle bg for close? Or just icon */
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+}
+
+
+.attachment-preview .close {
+  margin-left: 8px;
+  /* Fixed gap instead of auto to keep it tight if needed, but auto is fine too */
+  cursor: pointer;
+  color: #ef4444;
+  /* Brighter red */
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.attachment-preview .close:hover {
+  background: rgba(239, 68, 68, 0.2);
 }
 
 /* Upload Progress details */

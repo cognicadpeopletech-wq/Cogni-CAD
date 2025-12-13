@@ -458,7 +458,7 @@ function ModelViewer({ url, onModelReady }) {
   );
 }
 
-function CameraController({ onReady, autoRotate, modelMaxDim, enableDamping }) {
+function CameraController({ onReady, autoRotate, enableDamping = true, modelMaxDim }) {
   const { camera } = useThree();
   const controlsRef = useRef();
 
@@ -492,7 +492,7 @@ function CameraController({ onReady, autoRotate, modelMaxDim, enableDamping }) {
       makeDefault
       autoRotate={autoRotate}
       autoRotateSpeed={4.0}
-      enableDamping={enableDamping} // Controlled by parent
+      enableDamping={enableDamping}
       dampingFactor={0.1}
       zoomSpeed={0.8}
       rotateSpeed={1.5}
@@ -509,24 +509,10 @@ const ThreeCanvas = ({ mode }) => {
   const [mainModel, setMainModel] = useState(null);
   const [modelMaxDim, setModelMaxDim] = useState(0);
 
-  // --- Auto Rotate & Damping State ---
+  // Stability Controls
   const [autoRotate, setAutoRotate] = useState(false);
   const [enableDamping, setEnableDamping] = useState(true);
-
-  // Guard to prevent camera reset on every re-render
-  const initialCameraSet = useRef(false);
-
-  useEffect(() => {
-    // Check for default bike to enable auto-rotate
-    if (modelUrl === '/models/V3_DIRT_BIKE_3.compressed.glb') {
-      setAutoRotate(true);
-    } else {
-      setAutoRotate(false);
-    }
-
-    // Changing model URL resets the initialization flag
-    initialCameraSet.current = false;
-  }, [modelUrl]);
+  const initialCameraSet = useRef(false); // Guard against reset
 
   useEffect(() => {
     if (latestResult && latestResult.glb_url !== undefined) {
@@ -539,38 +525,19 @@ const ThreeCanvas = ({ mode }) => {
     }
   }, [latestResult, setExplodeMode, setColorMode, setMeasureMode]);
 
-  /* 
-     Re-enable damping on user interaction start 
-     This allows smooth rotation if the user grabs the mouse, 
-     but keeps it hard-snapped if they just clicked a button.
-  */
-  useEffect(() => {
-    if (cameraControls?.controls) {
-      const onStart = () => {
-        setEnableDamping(true);
-        setAutoRotate(false);
-      };
-      cameraControls.controls.addEventListener('start', onStart);
-      return () => {
-        cameraControls.controls.removeEventListener('start', onStart);
-      };
-    }
-  }, [cameraControls]);
-
-
   const handleModelReady = (model, maxDim) => {
     setMainModel(model);
     setModelMaxDim(maxDim);
 
-    // Initial Camera Fit - ONLY Run if not yet set for this model
+    // Initial Camera Fit (Legacy logic: dist = (size / 2) / tan(fov/2) * 1.5)
     if (cameraControls && maxDim > 0 && !initialCameraSet.current) {
       const { camera, controls } = cameraControls;
       const fov = camera.fov * (Math.PI / 180);
       let cameraZ = (maxDim / 2) / Math.tan(fov / 2);
       let paddingMultiplier = 1.5;
-      if (modelUrl && modelUrl.includes('V3_DIRT_BIKE_3')) {
-        paddingMultiplier = 1.5 * 0.75; // 5% closer zoom for default bike
-      }
+      // if (modelUrl && modelUrl.includes('V3_DIRT_BIKE_3')) {
+      //   paddingMultiplier = 1.5 * 0.75; // 5% closer zoom for default bike
+      // }
       cameraZ *= paddingMultiplier;
 
       camera.position.set(0, 0, cameraZ);
@@ -578,7 +545,6 @@ const ThreeCanvas = ({ mode }) => {
 
       controls.target.set(0, 0, 0); // Always target 0,0,0 (pivot)
       controls.update();
-
       initialCameraSet.current = true;
     }
   };
@@ -621,100 +587,52 @@ const ThreeCanvas = ({ mode }) => {
     }
   };
 
-  // --- SMART VIEW LOGIC (Relative to Model) ---
-  const handleViewChange = (view) => {
+  const handleViewChange = React.useCallback((view) => {
     if (!cameraControls?.camera || !cameraControls?.controls) return;
 
-    // Hard Stop: Disable Damping & AutoRotate via State & Instance
+    // 1. Force Stability
     setEnableDamping(false);
     setAutoRotate(false);
+    if (cameraControls.controls) {
+      cameraControls.controls.enableDamping = false;
+      cameraControls.controls.autoRotate = false;
+    }
 
-    // Immediate instance update to catch current frame
-    cameraControls.controls.enableDamping = false;
-    cameraControls.controls.autoRotate = false;
+    const { camera, controls } = cameraControls;
+    const target = controls.target.clone();
 
-    const { camera, controls: activeControls } = cameraControls; // use unwrapped controls
-
-    // Use current model size for distance
-    const size = modelMaxDim > 0 ? modelMaxDim : 10;
-    const fov = camera.fov * (Math.PI / 180);
-    // Standard framing distance
-    let dist = (size / 2) / Math.tan(fov / 2);
-    dist *= 1.5; // Padding
-
-    const target = activeControls.target.clone();
-
-    // Default World Vectors
+    // 2. Relative Logic - Align with Model's Rotation
+    const modelQuat = mainModel ? mainModel.quaternion.clone() : new THREE.Quaternion();
     let offset = new THREE.Vector3();
     let up = new THREE.Vector3(0, 1, 0);
 
-    /* 
-       We want the camera to be placed RELATIVE to the model.
-       If Model is rotated 90 deg Y, "Front" (Z+) is now World X+.
-       So we apply Model's rotation to the Standard View Offsets.
-    */
-    const modelQuat = mainModel ? mainModel.quaternion.clone() : new THREE.Quaternion();
+    if (view === 'front') offset.set(0, 0, 1);
+    if (view === 'back') offset.set(0, 0, -1);
+    if (view === 'left') offset.set(-1, 0, 0);
+    if (view === 'right') offset.set(1, 0, 0);
+    if (view === 'top') { offset.set(0, 1, 0.0001); up.set(0, 0, -1); }
+    if (view === 'bottom') { offset.set(0, -1, 0.0001); up.set(0, 0, 1); }
 
-    switch (view) {
-      case 'front':
-        offset.set(0, 0, 1); // Local Front
-        up.set(0, 1, 0);     // Local Up
-        break;
-      case 'back':
-        offset.set(0, 0, -1);
-        up.set(0, 1, 0);
-        break;
-      case 'left':
-        offset.set(-1, 0, 0);
-        up.set(0, 1, 0);
-        break;
-      case 'right':
-        offset.set(1, 0, 0);
-        up.set(0, 1, 0);
-        break;
-      case 'top':
-        offset.set(0, 1, 0.0001); // Avoid singularity
-        up.set(0, 0, -1);
-        break;
-      case 'bottom':
-        offset.set(0, -1, 0.0001); // Avoid singularity
-        up.set(0, 0, 1);
-        break;
-      default:
-        return;
-    }
-
-    // Apply Model Rotation to Offset and Up
+    // Apply Model's Rotation to offset and up vector
     offset.applyQuaternion(modelQuat);
     up.applyQuaternion(modelQuat);
 
-    // Calculate Final Position
-    const finalPos = target.clone().add(offset.multiplyScalar(dist));
+    // 3. Snap Position (Match Initial Load Zoom)
+    const size = modelMaxDim > 0 ? modelMaxDim : 10;
+    const fov = camera.fov * (Math.PI / 180);
+    // Calculate distance to fit the object perfectly given the FOV
+    let dist = (size / 2) / Math.tan(fov / 2);
 
-    // Instant Snap
-    camera.position.copy(finalPos);
+    // Apply the same padding multiplier as the initial load (1.5x)
+    // This ensures consistent zoom levels between initial load and view switches
+    dist *= 1.5;
+
+    camera.position.copy(target.clone().add(offset.multiplyScalar(dist)));
     camera.up.copy(up);
     camera.lookAt(target);
+    controls.update();
 
-    activeControls.update();
-
-    // Re-enable damping after a short delay for normal interaction?
-    // Actually, OrbitControls needs enableDamping=true to be set on prop to work next frame usually.
-    // If we set it to false on the instance, we might need to rely on React prop to re-enable it?
-    // No, cameraControls is an imperative handle.
-    // Let's leave it disabled for this interaction or re-enable in a timeout if smoothness is desired later.
-    // For "Exact View", snapping is better. User can re-enable by rotating? 
-    // Usually it's better to keep it off to prevent the drift.
-  };
-
-  // Listen to Store Requests
-  const { requestedView, setRequestedView } = useUIStore();
-  useEffect(() => {
-    if (requestedView) {
-      handleViewChange(requestedView);
-      setRequestedView(null); // Consume request
-    }
-  }, [requestedView, mainModel]); // Depend on mainModel to get fresh Quat
+  }, [cameraControls, modelMaxDim, mainModel]);
 
   /* Existing handleCubeRotate logic matches OrientationCube updates */
   const handleCubeRotate = (rotation) => {
@@ -726,16 +644,43 @@ const ThreeCanvas = ({ mode }) => {
   };
 
   // Sync Text-Based Rotation from Store
-  const { modelRotation } = useUIStore();
+  const { modelRotation, requestedView, setRequestedView } = useUIStore();
+
+  // Effect: Auto-Rotate specific model + Reset Guard
+  useEffect(() => {
+    if (modelUrl === '/models/V3_DIRT_BIKE_3.compressed.glb') {
+      setAutoRotate(true);
+    } else {
+      setAutoRotate(false);
+    }
+    initialCameraSet.current = false; // Reset guard logic
+  }, [modelUrl]);
+
+  // Effect: Re-enable damping on manual interaction
+  useEffect(() => {
+    if (cameraControls?.controls) {
+      const onStart = () => {
+        setEnableDamping(true);
+        setAutoRotate(false); // Stop autorotate on user interact
+      };
+      cameraControls.controls.addEventListener('start', onStart);
+      return () => cameraControls.controls.removeEventListener('start', onStart);
+    }
+  }, [cameraControls]);
+
   useEffect(() => {
     if (mainModel) {
-      // If user says "Rotate 45", we probably want to ADD to current or SET it?
-      // Let's SET it to match the store state exactly.
-      // If the store only updates Y, we preserve others?
-      // For simple "Rotate X degree", we usually mean around Y (up) axis.
       mainModel.rotation.y = modelRotation.y;
     }
   }, [mainModel, modelRotation]);
+
+  // Sync Natural Language View Control
+  useEffect(() => {
+    if (requestedView) {
+      handleViewChange(requestedView);
+      setRequestedView(null);
+    }
+  }, [requestedView, setRequestedView, handleViewChange]);
 
   return (
     <div className="viewer-container">
@@ -791,8 +736,8 @@ const ThreeCanvas = ({ mode }) => {
         <CameraController
           onReady={setCameraControls}
           autoRotate={autoRotate}
-          modelMaxDim={modelMaxDim}
           enableDamping={enableDamping}
+          modelMaxDim={modelMaxDim}
         />
       </Canvas>
     </div >
