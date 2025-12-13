@@ -10,7 +10,7 @@ number_re = r"(-?\d+(?:\.\d+)?)"
 def normalize(text: str) -> str:
     if not text:
         return ""
-    return text.replace("×", "x").replace("\u00D7", "x").replace("\u00A0", " ").lower().strip()
+    return re.sub(r"\s+", " ", text.replace("×", "x").replace("\u00D7", "x").replace("\u00A0", " ").lower().strip())
 
 def _normalize_short(text: str) -> str:
     return normalize(text)

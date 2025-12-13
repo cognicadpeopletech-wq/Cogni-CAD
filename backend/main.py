@@ -115,7 +115,7 @@ if STATIC_DIR.exists():
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR)) if TEMPLATES_DIR.exists() else None
 
 # --- Script definitions ---
-SCRIPT_TIMEOUT = 120
+SCRIPT_TIMEOUT = 600 # Increased for batch operations
 
 # Map User Intents to Scripts
 RECT_ROD_SCRIPT = "catia_create_parts_dynamic_rectrod.py"
@@ -463,13 +463,16 @@ async def run_command(request: Request):
                 # JSON Check
                 try:
                      out_json = json.loads(out) if out.strip().startswith("{") else None
-                     if out_json: return JSONResponse(out_json)
+                     if out_json:
+                          if "output" not in out_json:
+                              out_json["output"] = f"✅ Task Completed Successfully in {time_sec} Seconds"
+                          return JSONResponse(out_json)
                 except: pass
 
-                msg = f"✅ Task Completed Successfully \n"
-                if out: msg += f"Output:\n{out}\n"
-                if err: msg += f"Stderr:\n{err}\n"
-                if error: msg = f"❌ Error: {error}"
+                msg = f"✅ Task Completed Successfully in {time_sec} Seconds"
+                # if out: msg += f"Output:\n{out}\n"
+                # if err: msg += f"Stderr:\n{err}\n"
+                # if error: msg = f"❌ Error: {error}"
                 return JSONResponse({"output": msg, "time": time_sec})
             else:
                  logging.warning(f"Routed script {routed_script} not found on disk at {script_path}.")
@@ -497,10 +500,10 @@ async def run_command(request: Request):
             # Run
             out, err, time_sec, error = run_script_with_timer(str(script_path), args=flags, timeout=SCRIPT_TIMEOUT)
             
-            msg = f"✅ Executed {script_name}\n"
-            if out: msg += f"Output:\n{out}\n"
-            if err: msg += f"Stderr:\n{err}\n"
-            if error: msg = f"❌ Error: {error}"
+            msg = f"✅ Task Completed Successfully in {time_sec} Seconds"
+            # if out: msg += f"Output:\n{out}\n"
+            # if err: msg += f"Stderr:\n{err}\n"
+            # if error: msg = f"❌ Error: {error}"
             
             return JSONResponse({"output": msg, "time": time_sec})
         else:

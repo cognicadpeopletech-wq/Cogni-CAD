@@ -37,6 +37,7 @@ INTENTS_CACHE = None
 def load_intents(base_dir: Path):
     global INTENTS_CACHE
     if INTENTS_CACHE is not None:
+        # User requested reload check: Cache is persistent until server restart - Reload triggered (2)
         return INTENTS_CACHE
     
     intents_path = base_dir / "catia_copilot" / "intents.json"
@@ -74,7 +75,7 @@ def route_explicit_command(command_raw: str, base_dir: Path):
             ex_norm = normalize(ex)
             
             # Use regex with word boundaries to avoid partial matches (e.g. "hi" in "thickness")
-            # We want to match if the EXAMPLE is contained in the COMMAND as a phrase
+            # The EXAMPLE is contained in the COMMAND as a phrase
             # OR if the COMMAND is contained in the EXAMPLE (for short commands)
             
             # Check if example is a 'phrase' in the user command

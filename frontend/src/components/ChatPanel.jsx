@@ -233,7 +233,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 "show the uploaded model in the inhouse viewer", "visualize glb", "visualise glb",
                 "visualize model", "visualise model", "visualize the converted step file",
                 "visualise the converted step file", "visualize converted", "visualise converted",
-                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "load dirt bike model", "load car model", "load truck model","implode model"];
+                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "load dirt bike model", "load car model", "load truck model", "implode model"];
 
             if (glb_keywords.some(k => lowerCmd.includes(k))) {
                 if (pendingModelUrl.current) {
@@ -354,14 +354,14 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
 
             if (res.output || res.mode === 'optimization_cards') {
                 if (res.downloads?.csv || res.downloads?.pdf || res.downloads?.xlsx) {
-                    addMessage('✅ Task done successfully', 'bot', { type: 'downloads', items: res.downloads });
+                    addMessage('✅ Task Completed Successfully', 'bot', { type: 'downloads', items: res.downloads });
                 } else if (res.mode === 'optimization_cards') {
                     addMessage(res.raw_text || "Optimization Results:", 'bot', { type: 'optimization_cards', options: res.options });
                 } else {
-                    addMessage(res.output || '✅ Task done successfully', 'bot');
+                    addMessage(res.output || '✅ Task Completed Successfully', 'bot');
                 }
             } else {
-                addMessage('✅ Task done successfully', 'bot');
+                addMessage('✅ Task Completed Successfully', 'bot');
             }
             setLatestResult(res);
         }
@@ -567,7 +567,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                         </button>
                     </div>
                 </div>
- 
+
 
                 {/* Chat Area */}
                 <div className="chat-history">
