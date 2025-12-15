@@ -228,7 +228,7 @@ const OptimizedValuesPanel = () => {
 
 const ItemGroup = ({ title, children }) => (
     <div style={{ paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#666', marginBottom: '8px', letterSpacing: '0.5px' }}>{title}</div>
+        <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#ffffffff', marginBottom: '8px', letterSpacing: '0.5px' }}>{title}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '8px' }}>
             {children}
         </div>

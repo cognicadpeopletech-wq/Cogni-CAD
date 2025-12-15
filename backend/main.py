@@ -387,7 +387,7 @@ async def run_command(request: Request):
               return JSONResponse({
                   "mode": "apply_single_color", 
                   "color": color_name,
-                  "output": f"🎨 Applying {color_name} color to the model..."
+                  "output": f"{color_name} 🎨 Color Analysis Mode Active"
               })
 
     if "color" in s or ("apply" in s and "paint" in s):

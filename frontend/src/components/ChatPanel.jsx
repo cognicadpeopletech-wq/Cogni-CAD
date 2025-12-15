@@ -1285,13 +1285,13 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 return;
             }
 
-            if (lowerCmd.includes("color") || lowerCmd.includes("apply color")) {
-                useUIStore.getState().setColorMode(true);
-                setPanelState('right-maximized'); // Expand to full screen
-                addMessage("🎨 Color Analysis Mode Active. Model expanded in full screen.", 'bot');
-                setLoading(false);
-                return;
-            }
+            // if (lowerCmd.includes("color") || lowerCmd.includes("apply color")) {
+            //     useUIStore.getState().setColorMode(true);
+            //     setPanelState('right-maximized'); // Expand to full screen
+            //     addMessage("🎨 Color Analysis Mode Active. Model expanded in full screen.", 'bot');
+            //     setLoading(false);
+            //     return;
+            // }
 
             // --- VIEW CONTROL COMMANDS ---
             const viewMatch = lowerCmd.match(/\b(top|bottom|front|back|left|right|rear|side)\s+view\b/);
@@ -1372,10 +1372,12 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
             if (res.mode === 'apply_colors') {
                 useUIStore.getState().setColorMode(true);
                 useUIStore.getState().setRequestedColor(null); // Ensure random mode
+                setPanelState('right-maximized');
             }
             if (res.mode === 'apply_single_color') {
                 useUIStore.getState().setColorMode(true);
                 useUIStore.getState().setRequestedColor(res.color);
+                setPanelState('right-maximized');
             }
 
             if (res.output || res.mode === 'optimization_cards') {
