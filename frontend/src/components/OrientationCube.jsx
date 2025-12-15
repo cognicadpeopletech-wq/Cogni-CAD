@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import useUIStore from '../store/uiStore';
 
-const OrientationCube = ({ onViewChange, onRotate, mainModel }) => {
+const OrientationCube = ({ onViewChange, onRotateDelta, mainCamera, onInteractionStart, onInteractionEnd }) => {
     const { orientationCubeVisible } = useUIStore();
     const canvasRef = useRef(null);
     const sceneRef = useRef(null);
@@ -13,13 +13,16 @@ const OrientationCube = ({ onViewChange, onRotate, mainModel }) => {
     useEffect(() => {
         if (!canvasRef.current) return;
 
+        // Drag state (Moved up for scope access in animate)
+        let isDragging = false;
+
         // Setup scene
         const scene = new THREE.Scene();
         sceneRef.current = scene;
 
         // Setup camera
         const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-        camera.position.set(2, 2, 2);
+        camera.position.set(0, 0, 3.5); // Adjusted Zoom for better fit
         camera.lookAt(0, 0, 0);
         cameraRef.current = camera;
 
@@ -120,24 +123,23 @@ const OrientationCube = ({ onViewChange, onRotate, mainModel }) => {
         scene.add(dirLight);
 
         // Animation loop
+        let frameId;
         const animate = () => {
-            requestAnimationFrame(animate);
-
-            // Sync cube rotation with main model
-            if (mainModel && cubeRef.current) {
-                cubeRef.current.rotation.copy(mainModel.rotation);
+            // Sync cube rotation effectively with MAIN CAMERA
+            if (mainCamera && cubeRef.current) {
+                cubeRef.current.quaternion.copy(mainCamera.quaternion);
             }
 
             renderer.render(scene, camera);
+            frameId = requestAnimationFrame(animate);
         };
         animate();
 
-        // Drag interaction
-        let isDragging = false;
         let lastX = 0, lastY = 0;
 
         const onPointerDown = (e) => {
             isDragging = true;
+            if (onInteractionStart) onInteractionStart();
             const rect = canvasRef.current.getBoundingClientRect();
             lastX = e.clientX - rect.left;
             lastY = e.clientY - rect.top;
@@ -153,21 +155,15 @@ const OrientationCube = ({ onViewChange, onRotate, mainModel }) => {
             lastX = nx;
             lastY = ny;
 
-            cubeGroup.rotation.y += dx * 0.01;
-            cubeGroup.rotation.x += dy * 0.01;
-
-            // Notify parent to sync main model rotation
-            if (onRotate) {
-                onRotate({
-                    x: cubeGroup.rotation.x,
-                    y: cubeGroup.rotation.y,
-                    z: cubeGroup.rotation.z
-                });
+            // Emit DELTA instead of absolute rotation
+            if (onRotateDelta) {
+                onRotateDelta({ dx, dy });
             }
         };
 
         const onPointerUp = () => {
             isDragging = false;
+            if (onInteractionEnd) onInteractionEnd();
         };
 
         const onClick = (e) => {
@@ -203,8 +199,9 @@ const OrientationCube = ({ onViewChange, onRotate, mainModel }) => {
             window.removeEventListener('pointermove', onPointerMove);
             window.removeEventListener('pointerup', onPointerUp);
             canvasRef.current?.removeEventListener('click', onClick);
+            cancelAnimationFrame(frameId); // Cleanup animation
         };
-    }, [onViewChange, onRotate, mainModel]);
+    }, [onViewChange, onRotateDelta, mainCamera, onInteractionStart, onInteractionEnd]);
 
     return (
         <div className={`orientation-cube ${orientationCubeVisible ? 'active' : ''}`}>
@@ -213,4 +210,4 @@ const OrientationCube = ({ onViewChange, onRotate, mainModel }) => {
     );
 };
 
-export default OrientationCube;
+export default React.memo(OrientationCube);

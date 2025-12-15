@@ -68,6 +68,8 @@ const useUIStore = create((set) => ({
     return { measurePoints: newPoints };
   }),
 
+  clearMeasurePoints: () => set({ measurePoints: [] }),
+
   transformMode: false,
   setTransformMode: (active) => set({ transformMode: active }),
 

@@ -594,7 +594,7 @@ async def upload_file(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        file_url = f"http://127.0.0.1:8000/static/uploads/{safe_name}"
+        file_url = f"http://127.0.0.1:8000/static/uploads/{filename}"
         msg = f"Uploaded {file.filename} successfully."
         
         # BOM Handling
@@ -617,7 +617,9 @@ async def convert_file(filename: str = Form(...)):
         if not file_path.exists():
              return JSONResponse({"error": "File not found"}, status_code=404)
         
-        glb_name = f"{uuid.uuid4()}.glb"
+        # Derive GLB name from original filename
+        base_name = os.path.splitext(filename)[0]
+        glb_name = f"{base_name}.glb"
         glb_path = upload_dir / glb_name
         converted_url = f"http://127.0.0.1:8000/static/uploads/{glb_name}"
         msg = "Conversion completed."
@@ -634,7 +636,9 @@ async def convert_file(filename: str = Form(...)):
             model = cq.importers.importStep(str(file_path))
             
             # 2. Rotate -90 X (Z-up to Y-up)
-            model = model.rotate((0,0,0), (1,0,0), -90)
+            # 2. Rotation Adjustment
+            # Rotate around Y-axis (Up) to turn "Front View" (facing camera) into "Side View" (Profile)
+            model = model.rotate((0,0,0), (0,1,0), 90)
             
             # 3. Export Intermediate STL
             with tempfile.NamedTemporaryFile(suffix=".stl", delete=False) as tmp_stl:
