@@ -308,7 +308,7 @@ def main():
     product_doc.SaveAs(PROD)
     pythoncom.CoUninitialize()
 
-    print("\n✔ SUCCESS: Pocket direction set (configurable) + Fit diameters MATCH perfectly\n")
+    print("\n[SUCCESS] Pocket direction set (configurable) + Fit diameters MATCH perfectly\n")
 
 
 if __name__ == "__main__":

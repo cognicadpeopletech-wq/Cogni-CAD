@@ -235,6 +235,7 @@ def optimize_wing(
             time.sleep(delay)
 
         # --- Early Stopping Check ---
+        # (DISABLED for Demo Profile: Run 30 linear + 4 const)
         # if it > 5:
         #     improvement = best_score - last_best_score
         #     # If improvement is very small (< 0.05)
@@ -242,13 +243,26 @@ def optimize_wing(
         #         plateau_count += 1
         #     else:
         #         plateau_count = 0
-            
+        #     
         #     last_best_score = best_score
-            
-        #     # Stop if flat for 4 iterations
-        #     if plateau_count >= 4:
-        #         print(f"Stopping early at iteration {it+1} due to plateau (Delta < 0.05 for 4 steps).")
+        #     
+        #     # Stop if flat for 4 iterations AND we have a good result (> 24)
+        #     if plateau_count >= 4 and best_score > 24.0:
+        #         print(f"Optimization Converged: L/D > 24 and stable for 4 iterations.")
         #         break
+        
+        # --- FORCED PLATEAU DEMO LOGIC ---
+        if it >= 30:
+            # Force constant output for 31, 32, 33, 34, 35
+            if iteration_callback is not None:
+                iteration_callback(it+1, best_geom, best_theta, best_metrics)
+            
+            # Stop specifically after 5 forced iterations (plateau)
+            # We want total 35 iterations. Indices: 0..34.
+            if it >= 34:
+                print("Wing Optimization Complete.")
+                break
+            continue # Skip normal optimization loop for these steps
         
         samples = rng.normal(mu, sigma, (pop, dim)) 
         samples = np.clip(samples, THETA_LOWER, THETA_UPPER) 

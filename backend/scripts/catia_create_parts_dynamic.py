@@ -69,6 +69,16 @@ def get_params():
         params["SAVE_DIR"] = DEFAULTS["SAVE_DIR"]
 
     params["SAVE_TIMESTAMPED"] = bool(params["SAVE_TIMESTAMPED"])
+    
+    # Ensure save dir exists physically
+    if not os.path.exists(params["SAVE_DIR"]):
+        try:
+             os.makedirs(params["SAVE_DIR"], exist_ok=True)
+        except Exception as e:
+             print(f"Error creating save dir {params['SAVE_DIR']}: {e}")
+             sys.exit(1)
+             
+    print(f"DEBUG: Loaded Params: {params}")
     return params
 
 
@@ -85,63 +95,63 @@ def safe_save(doc, path):
 # -----------------------------------------------------------
 
 def create_rectangle_pad_with_center_pocket(part, width, height, pad_thickness, pocket_radius):
-    try:
-        body = part.Bodies.Item("PartBody")
-        sketches = body.Sketches
-        plane_xy = part.OriginElements.PlaneXY
+    # try: removed to allow crash on error
+    body = part.Bodies.Item("PartBody")
+    sketches = body.Sketches
+    plane_xy = part.OriginElements.PlaneXY
 
-        half_w = width/2
-        half_h = height/2
+    half_w = width/2
+    half_h = height/2
 
-        # rectangle
-        sk = sketches.Add(plane_xy)
-        part.InWorkObject = sk
-        ed = sk.OpenEdition()
-        ed.CreateLine(half_w, half_h, half_w, -half_h)
-        ed.CreateLine(half_w, -half_h, -half_w, -half_h)
-        ed.CreateLine(-half_w, -half_h, -half_w, half_h)
-        ed.CreateLine(-half_w, half_h, half_w, half_h)
-        sk.CloseEdition()
-        part.Update()
+    # rectangle
+    sk = sketches.Add(plane_xy)
+    part.InWorkObject = sk
+    ed = sk.OpenEdition()
+    ed.CreateLine(half_w, half_h, half_w, -half_h)
+    ed.CreateLine(half_w, -half_h, -half_w, -half_h)
+    ed.CreateLine(-half_w, -half_h, -half_w, half_h)
+    ed.CreateLine(-half_w, half_h, half_w, half_h)
+    sk.CloseEdition()
+    part.Update()
 
-        factory = part.ShapeFactory
-        factory.AddNewPad(sk, pad_thickness)
-        part.Update()
+    factory = part.ShapeFactory
+    factory.AddNewPad(sk, pad_thickness)
+    part.Update()
 
-        # pocket
-        sk2 = sketches.Add(plane_xy)
-        part.InWorkObject = sk2
-        ed2 = sk2.OpenEdition()
-        ed2.CreateClosedCircle(0,0,pocket_radius)
-        sk2.CloseEdition()
-        part.Update()
+    # pocket
+    sk2 = sketches.Add(plane_xy)
+    part.InWorkObject = sk2
+    ed2 = sk2.OpenEdition()
+    ed2.CreateClosedCircle(0,0,pocket_radius)
+    sk2.CloseEdition()
+    part.Update()
 
-        factory.AddNewPocket(sk2, pad_thickness + 0.2)
-        part.Update()
+    factory.AddNewPocket(sk2, pad_thickness + 0.2)
+    part.Update()
 
-    except Exception:
-        traceback.print_exc()
+    # except Exception:
+    #     traceback.print_exc()
 
 
 def create_cylinder_part(part, radius, height):
-    try:
-        body = part.Bodies.Item("PartBody")
-        sketches = body.Sketches
-        plane_xy = part.OriginElements.PlaneXY
+    # try: removed to allow crash on error
+    body = part.Bodies.Item("PartBody")
+    sketches = body.Sketches
+    plane_xy = part.OriginElements.PlaneXY
 
-        sk = sketches.Add(plane_xy)
-        part.InWorkObject = sk
-        ed = sk.OpenEdition()
-        ed.CreateClosedCircle(0,0,radius)
-        sk.CloseEdition()
-        part.Update()
+    sk = sketches.Add(plane_xy)
+    part.InWorkObject = sk
+    ed = sk.OpenEdition()
+    ed.CreateClosedCircle(0,0,radius)
+    sk.CloseEdition()
+    part.Update()
 
-        factory = part.ShapeFactory
-        factory.AddNewPad(sk, height)
-        part.Update()
+    factory = part.ShapeFactory
+    factory.AddNewPad(sk, height)
+    part.Update()
 
-    except Exception:
-        traceback.print_exc()
+    # except Exception:
+    #     traceback.print_exc()
 
 
 def set_component_translation_to(partComp, tx=0, ty=0, tz=0):
@@ -179,8 +189,8 @@ def main():
     PROD = os.path.join(save_dir, f"Assembly_{ts}.CATProduct")
 
     if not CATIA_AVAILABLE:
-        print("CATIA not available")
-        return
+        print("CATIA not available (win32com.client import failed)")
+        sys.exit(1)
 
     pythoncom.CoInitialize()
 
@@ -205,7 +215,7 @@ def main():
     except Exception as e:
         print("Connection error:", e)
         pythoncom.CoUninitialize()
-        return
+        sys.exit(1)
 
     docs = catia.Documents
     product_doc = docs.Add("Product")
@@ -247,6 +257,7 @@ def main():
         # print("Saved assembly:", PROD)
     except Exception as e:
         # print("Save warning:", e)
+        pass
 
     pythoncom.CoUninitialize()
 

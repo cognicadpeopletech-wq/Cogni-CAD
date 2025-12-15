@@ -878,11 +878,13 @@ import { runCommand, uploadFile, convertFile, splitLeft, maximizeWindow } from '
 const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) => {
     const { messages, setMessages, addMessage, isLoading, setLoading, setLatestResult, uploadProgress, setUploadProgress, attachmentPreview, setAttachmentPreview, setWingMode, switchChatHistory, commandHistory, addToHistory } = useUIStore();
     const [input, setInput] = useState('');
+    const [loadingText, setLoadingText] = useState('Processing...');
     const [uploadedFile, setUploadedFile] = useState(null); // Keeps track of last uploaded file URL
     const [showMenu, setShowMenu] = useState(false);
     const messagesEndRef = useRef(null);
 
     const [conversionProgress, setConversionProgress] = useState(0);
+    const [bomProgress, setBomProgress] = useState(0);
 
     // Hidden file input refs
     const glbInputRef = useRef(null);
@@ -902,6 +904,11 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Ensure setLoading resets text defaults
+    useEffect(() => {
+        if (!isLoading) setLoadingText('Processing...');
+    }, [isLoading]);
 
     // --- Main Interaction Handler ---
     const handleSend = async (manualCmd = null, hidden = false) => {
@@ -989,6 +996,29 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                     currentUploadFilename = res.filename || attachmentPreview.name;
                     setUploadedFile(res.url); // Update state
 
+                    // --- NEW: Auto-Open in CATIA for CAD Parts ---
+                    // User Request: "it has to directly it ha stotriggere the catia applicationa nd open the file"
+                    if (mode === 'CATIA_COPILOT' || (attachmentPreview.name && (attachmentPreview.name.toLowerCase().endsWith('.catpart') || attachmentPreview.name.toLowerCase().endsWith('.catproduct')))) {
+
+                        try {
+                            const openRes = await fetch('http://127.0.0.1:8000/open_in_catia', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ filename: res.filename || attachmentPreview.name })
+                            });
+                            const openData = await openRes.json();
+                            if (openData.success) {
+                                addMessage('✅ File uploaded and opened in CATIA successfully.', 'bot');
+                            } else {
+                                addMessage(`⚠️ Uploaded, but failed to open in CATIA: ${openData.message}`, 'bot');
+                            }
+                        } catch (err) {
+                            addMessage(`⚠️ Uploaded, but error triggering CATIA: ${err}`, 'bot');
+                        }
+                    } else {
+                        addMessage('✅ File uploaded successfully.', 'bot');
+                    }
+
                     // Logic Distribution based on Type
                     if (attachmentPreview.type === 'step') {
                         // Check if command implies conversion. 
@@ -1075,6 +1105,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 // MODE CHECK: Only run In-House optimizer if mode is INHOUSE_CAD
                 if (mode === 'INHOUSE_CAD') {
                     setWingMode(true);
+                    setPanelState('right-maximized'); // Maximize 3D viewer as requested
                     addMessage("🚀 Starting Wing Optimization...", 'bot');
                     try {
                         const res = await fetch('http://127.0.0.1:8000/inhouse_cad/wing/optimize', {
@@ -1163,7 +1194,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 "show the uploaded model in the inhouse viewer", "visualize glb", "visualise glb",
                 "visualize model", "visualise model", "visualize the converted step file",
                 "visualise the converted step file", "visualize converted", "visualise converted",
-                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "load the model eBikeChasis.glb", "load dirt bike model", "load car model", "load truck model"];
+                "visualize the recently converted step file", "visualize the recently converted step file", "load scooter glb model", "Load Dirt Bike 3D Catproduct", "load car model", "load truck model", "implode model", "Load Dirt Bike 3D Catproduct"];
 
             if (glb_keywords.some(k => lowerCmd.includes(k))) {
                 if (pendingModelUrl.current) {
@@ -1276,6 +1307,59 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 return;
             }
 
+            // --- BOM Loading Text & Progress Logic ---
+            if (lowerCmd.includes('bom') || lowerCmd.includes('bill of materials')) {
+                // setLoadingText("Bill of Materials computation is in progress."); // Replaced by Progress Bar
+                setLoadingText(null); // Hide default loading text
+
+                // Start Simulated Progress
+                setBomProgress(0);
+                const bomInterval = setInterval(() => {
+                    setBomProgress(prev => {
+                        if (prev >= 95) return prev; // Stall at 95% until done
+                        return prev + 2; // Slower increment
+                    });
+                }, 300);
+
+                // Store interval ID in a way we can clear it? 
+                // Since await blocks, we can clear after await.
+                // But React state updates persist.
+
+                setLoading(true);
+                const res = await runCommand(cmdToSend, { uploaded_file: uploadedFile });
+
+                clearInterval(bomInterval);
+                setBomProgress(100);
+                setTimeout(() => setBomProgress(0), 1500); // Hide after 1.5s
+
+                setLoading(false);
+
+                // --- Handle Backend Modes ---
+                if (res.mode === 'explode') {
+                    useUIStore.getState().setExplodeMode(true); // or toggle
+                }
+                if (res.mode === 'apply_colors') {
+                    useUIStore.getState().setColorMode(true);
+                }
+
+                if (res.output || res.mode === 'optimization_cards') {
+                    const timeStr = res.time ? ` in ${Number(res.time).toFixed(2)} seconds` : "";
+                    if (res.downloads?.csv || res.downloads?.pdf || res.downloads?.xlsx) {
+                        addMessage(`✅ Task completed successfully${timeStr}`, 'bot', { type: 'downloads', items: res.downloads });
+                    } else if (res.mode === 'optimization_cards') {
+                        addMessage(res.raw_text || "Optimization Results:", 'bot', { type: 'optimization_cards', options: res.options });
+                    } else {
+                        addMessage(res.output || `✅ Task completed successfully${timeStr}`, 'bot');
+                    }
+                } else {
+                    addMessage('✅ Task Completed Successfully', 'bot');
+                }
+                setLatestResult(res);
+                return; // Exit early since we handled everything here for BOM specific flow 
+            } else {
+                setLoadingText("Processing..."); // Default
+            }
+
             setLoading(true);
             // We pass 'uploadedFile' state which might persist from previous uploads
             const res = await runCommand(cmdToSend, { uploaded_file: uploadedFile });
@@ -1287,15 +1371,21 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
             }
             if (res.mode === 'apply_colors') {
                 useUIStore.getState().setColorMode(true);
+                useUIStore.getState().setRequestedColor(null); // Ensure random mode
+            }
+            if (res.mode === 'apply_single_color') {
+                useUIStore.getState().setColorMode(true);
+                useUIStore.getState().setRequestedColor(res.color);
             }
 
             if (res.output || res.mode === 'optimization_cards') {
+                const timeStr = res.time ? ` in ${Number(res.time).toFixed(2)} seconds` : "";
                 if (res.downloads?.csv || res.downloads?.pdf || res.downloads?.xlsx) {
-                    addMessage('✅ Task done successfully', 'bot', { type: 'downloads', items: res.downloads });
+                    addMessage(`✅ Task completed successfully${timeStr}`, 'bot', { type: 'downloads', items: res.downloads });
                 } else if (res.mode === 'optimization_cards') {
                     addMessage(res.raw_text || "Optimization Results:", 'bot', { type: 'optimization_cards', options: res.options });
                 } else {
-                    addMessage(res.output || '✅ Task done successfully', 'bot');
+                    addMessage(res.output || `✅ Task completed successfully${timeStr}`, 'bot');
                 }
             } else {
                 addMessage('✅ Task done successfully', 'bot');
@@ -1308,13 +1398,15 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
         // 1. Determine Script Name
         let scriptName = "catia_create_parts_dynamic.py"; // Default: Cylinder Solid
 
-        if (card.shape_type === 'cylinder_tube') {
+        if (card.shape_type === 'cylinder_solid' || (card.shape_type === 'cylinder' && !card.inner_radius)) {
+            scriptName = "catia_create_parts_dynamic.py";
+        } else if (card.shape_type === 'cylinder_tube' || (card.shape_type === 'cylinder' && !card.inner_radius)) {
             scriptName = "catia_create_parts_dynamic_updated.py";
         } else if (card.shape_type === 'rect_rod' || (card.shape_type && card.shape_type.includes('rect') && !card.shape_type.includes('tube'))) {
             scriptName = "catia_create_parts_dynamic_rectrod.py";
         } else if (card.shape_type === 'rect_tube' || (card.shape_type && card.shape_type.includes('rect') && card.shape_type.includes('tube'))) {
             scriptName = "catia_create_parts_dynamic_rectrod_updated.py";
-        } else if (card.shape_type === 'wing') {
+        } else if (card.shape_type === 'wing' || card.shape_type === 'wing_result') {
             scriptName = "wing_structure_winglet_transparent.py";
         }
 
@@ -1370,7 +1462,16 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
         params["plate_l"] = params.plate_length;
         params["plate_t"] = params.pad_thickness;
 
-        addMessage(`⚙️ Generating ${card.shape_type || 'design'} logic...`, 'bot');
+        // Legacy script (catia_create_parts_dynamic.py) expects specific uppercase keys
+        params["WIDTH"] = params.plate_width;
+        params["HEIGHT"] = params.plate_length;
+        params["PAD_THICKNESS"] = params.pad_thickness;
+        params["CYL_RADIUS"] = params.cyl_radius;
+        params["CYL_HEIGHT"] = params.cyl_height;
+
+        if (card.shape_type !== 'wing_result') {
+            addMessage(`⚙️ Generating ${card.shape_type || 'design'} logic...`, 'bot');
+        }
         setLoading(true);
 
         try {
@@ -1385,7 +1486,10 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
 
             const data = await response.json();
             if (data.success) {
-                addMessage(`✅ Generation Successful!\n${data.output}`, 'bot');
+                if (card.shape_type !== 'wing_result') {
+                    const timeStr = data.time ? ` in ${Number(data.time).toFixed(2)} seconds` : "";
+                    addMessage(`✅ Task completed successfully${timeStr}`, 'bot');
+                }
             } else {
                 addMessage(`❌ Generation Failed: ${data.message}`, 'bot');
             }
@@ -1541,6 +1645,12 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                                                                     Score: {Number(opt.score).toFixed(2)}
                                                                 </div>
                                                             </>
+                                                        ) : opt.shape_type === 'wing_result' ? (
+                                                            <>
+                                                                <div className="param-row">Wing Span: {Number(opt.span).toFixed(2)} m</div>
+                                                                <div className="param-row">Chord: {Number(opt.root_chord).toFixed(2)} m (Root) - {Number(opt.tip_chord).toFixed(2)} m (Tip)</div>
+                                                                <div className="param-row">Sweep: {Number(opt.sweep).toFixed(2)}°, Twist: {Number(opt.twist_root).toFixed(2)}°/{Number(opt.twist_tip).toFixed(2)}°</div>
+                                                            </>
                                                         ) : (
                                                             <>
                                                                 <div className="param-row">
@@ -1567,11 +1677,15 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                                                                 </div>
                                                             </>
                                                         )}
-                                                        <div className="metric-row" style={{ color: '#ccc' }}>
-                                                            Score: {Number(opt.score).toFixed(2)}
-                                                        </div>
+                                                        {opt.shape_type !== 'wing_result' && (
+                                                            <div className="metric-row" style={{ color: '#ccc' }}>
+                                                                Score: {Number(opt.score).toFixed(2)}
+                                                            </div>
+                                                        )}
 
-                                                        <button className="opt-generate-btn" onClick={() => handleGenerateDesign(opt)}>Generate in CATIA</button>
+                                                        {opt.shape_type !== 'wing_result' && (
+                                                            <button className="opt-generate-btn" onClick={() => handleGenerateDesign(opt)}>Generate in CATIA</button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
@@ -1633,7 +1747,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                         </div>
                     ))}
                     {isLoading && (
-                        <div style={{ padding: '10px', color: '#666', fontSize: '0.8rem' }}>Processing...</div>
+                        <div style={{ padding: '10px', color: '#666', fontSize: '0.8rem' }}>{loadingText}</div>
                     )}
                     {/* Conversion Progress Bar in Chat */}
                     {conversionProgress > 0 && conversionProgress <= 100 && (
@@ -1646,6 +1760,21 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                                 </div>
                                 <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden', marginTop: '4px' }}>
                                     <div style={{ width: `${conversionProgress}%`, height: '100%', background: 'var(--accent-blue)', transition: 'width 0.2s ease' }}></div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* BOM Progress Bar (User Request) */}
+                    {bomProgress > 0 && bomProgress <= 100 && (
+                        <div className={`chat-msg bot`}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '300px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <i className="fas fa-list-alt fa-spin" style={{ color: 'var(--accent-blue)', fontSize: '1.1em' }}></i>
+                                    <span style={{ fontWeight: 600, color: '#fff' }}>Bill of Materials computation is in progress...</span>
+                                    <span style={{ marginLeft: 'auto', fontFamily: 'monospace', color: 'var(--accent-blue)' }}>{bomProgress}%</span>
+                                </div>
+                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden', marginTop: '4px' }}>
+                                    <div style={{ width: `${bomProgress}%`, height: '100%', background: 'var(--accent-blue)', transition: 'width 0.2s ease' }}></div>
                                 </div>
                             </div>
                         </div>

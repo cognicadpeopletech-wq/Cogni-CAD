@@ -31,9 +31,9 @@ PATH_prev = os.path.dirname(PATH) + '\\'
 caa = catia()
 application = caa.application
 documents = application.documents
-if documents.count > 0:
-    for document in documents:
-        document.close()
+# if documents.count > 0:
+#     for document in documents:
+#         document.close()
         
 # Load Part
 documents.open(PATH + "solid_combine.CATPart")

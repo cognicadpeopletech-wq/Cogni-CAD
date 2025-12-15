@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import useUIStore from '../store/uiStore';
 
 const WingHUD = () => {
-    const { wingMode, setLatestResult, setWingMode } = useUIStore();
+    const { wingMode, setLatestResult, setWingMode, setOptimizedValues, addMessage } = useUIStore();
     const [metrics, setMetrics] = useState(null);
     const [status, setStatus] = useState("Idle");
     const [connected, setConnected] = useState(false);
@@ -45,11 +45,43 @@ const WingHUD = () => {
                 if (data.status === "complete") {
                     setStatus("Opening optimized_wing.stp in CATIA V5...");
                     evtSource.close();
+
+                    // Dispatch results to store for the new panel
+                    if (data.optimized_params) {
+                        setLatestResult({ glb_url: `http://127.0.0.1:8000/generated_files/wing_opt/optimized_wing.glb?t=${Date.now()}` });
+
+                        // Format and print to chat as a Card
+                        const params = data.optimized_params;
+
+                        addMessage("Optimized Values:", 'bot', {
+                            type: 'optimization_cards',
+                            options: [{
+                                design_name: "Final Optimized Wing",
+                                shape_type: "wing_result",
+                                span: params.span,
+                                root_chord: params.root_chord,
+                                tip_chord: params.tip_chord,
+                                sweep: params.sweep_le_deg,
+                                twist_root: params.twist_root_deg,
+                                twist_tip: params.twist_tip_deg,
+                                
+                            }]
+                        });
+
+                        // Using a small timeout to let the UI settle or animation finish
+                        setTimeout(() => {
+                            setOptimizedValues(data.optimized_params);
+                        }, 500);
+                    }
+
                     setTimeout(() => setStatus("CATIA: Validating Geometry Surface..."), 3000);
                     setTimeout(() => setStatus("CATIA: Analysis Passed. Returning to In-House CAD..."), 6000);
                     setTimeout(() => {
                         setStatus("Complete");
-                        setLatestResult({ glb_url: `http://127.0.0.1:8000/generated_files/wing_opt/optimized_wing.glb?t=${Date.now()}` });
+                        if (!data.optimized_params) {
+                            // Fallback if not set above (legacy support)
+                            setLatestResult({ glb_url: `http://127.0.0.1:8000/generated_files/wing_opt/optimized_wing.glb?t=${Date.now()}` });
+                        }
                     }, 8000);
                     return;
                 }
@@ -296,14 +328,14 @@ const SimpleLineChart = ({ data, color }) => {
     const maxVal = Math.max(...data.map(d => d.val));
     const minVal = Math.min(...data.map(d => d.val));
 
-    // Fixed Y domain: 0 to 30
-    const yMax = 30;
+    // Fixed Y domain: 0 to 40
+    const yMax = 40;
     const yMin = 0;
     const range = yMax - yMin;
 
     // Normalize points to 0-100%
     const pointsArr = data.map((d, i) => {
-        const x = (i / 30) * 100; // Fixed to 30 iters as max X
+        const x = (i / 40) * 100; // Fixed to 40 iters as max X
         const y = 100 - ((d.val - yMin) / range) * 100; // Invert Y for SVG
         return { x, y };
     });
@@ -323,79 +355,86 @@ const SimpleLineChart = ({ data, color }) => {
     const yTicksDisplay = [...yTicks].reverse();
 
     return (
-        <div style={{ position: 'relative', width: '100%', height: '100%', paddingLeft: '35px', paddingRight: '55px', paddingBottom: '25px' }}>
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
             {/* Y Axis Title */}
             <div style={{
                 position: 'absolute',
-                left: '-6px',
+                left: '0px',
                 top: '50%',
                 transform: 'rotate(-90deg) translateX(50%)',
-                fontSize: '10px',
-                color: '#888',
+                fontSize: '14x',
+                color: '#aaa',
                 fontWeight: 600
             }}>
                 L/D Ratio
             </div>
 
             {/* Y Axis Labels */}
-            <div style={{ position: 'absolute', left: 0, top: 0, bottom: '25px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: '10px', color: '#666' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: '25px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: '10px', color: '#aaa' }}>
                 {yTicksDisplay.map((tick, i) => (
-                    <span key={i}>{Math.round(tick)}</span>
+                    <span key={i} style={{ fontSize: '13px', fontWeight: 600 }}>{Math.round(tick)}</span>
                 ))}
             </div>
 
-            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', overflow: 'visible' }} preserveAspectRatio="none">
-                {/* Horizontal Grid Lines aligned with Y ticks */}
-                {yTicks.map((tick, i) => {
-                    const yPos = 100 - ((tick - yMin) / range) * 100;
-                    return (
-                        <line key={i} x1="0" y1={yPos} x2="100" y2={yPos} stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                    );
-                })}
+            {/* Chart Content Area: Wrapper for SVG and Marker to share same coordinate space */}
+            <div style={{ position: 'absolute', top: 0, left: '35px', right: '55px', bottom: '25px' }}>
+                <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', overflow: 'visible' }} preserveAspectRatio="none">
+                    {/* Horizontal Grid Lines aligned with Y ticks */}
+                    {yTicks.map((tick, i) => {
+                        const yPos = 100 - ((tick - yMin) / range) * 100;
+                        return (
+                            <line key={i} x1="0" y1={yPos} x2="100" y2={yPos} stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+                        );
+                    })}
 
-                {/* Vertical Grid Lines aligned with X ticks (0, 5, 10...) */}
-                {[0, 5, 10, 15, 20, 25, 30].map(val => {
-                    const xPos = (val / 30) * 100;
-                    return (
-                        <line key={val} x1={xPos} y1="0" x2={xPos} y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                    );
-                })}
+                    {/* Vertical Grid Lines aligned with X ticks (0, 10, 20, 30, 40) */}
+                    {[0, 10, 20, 30, 40].map(val => {
+                        const xPos = (val / 40) * 100;
+                        return (
+                            <line key={val} x1={xPos} y1="0" x2={xPos} y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+                        );
+                    })}
 
-                {/* Area Fill */}
-                <defs>
-                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-                        <stop offset="100%" stopColor={color} stopOpacity="0.0" />
-                    </linearGradient>
-                </defs>
-                <polygon points={`${points} ${lastPoint.x},100 0,100`} fill="url(#chartGradient)" />
+                    {/* Area Fill */}
+                    <defs>
+                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+                            <stop offset="100%" stopColor={color} stopOpacity="0.0" />
+                        </linearGradient>
+                    </defs>
+                    <polygon points={`${points} ${lastPoint.x},100 0,100`} fill="url(#chartGradient)" />
 
-                {/* Line */}
-                <polyline
-                    fill="none"
-                    stroke={color}
-                    strokeWidth="3"
-                    points={points}
-                    vectorEffect="non-scaling-stroke"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
+                    {/* Line */}
+                    <polyline
+                        fill="none"
+                        stroke={color}
+                        strokeWidth="3"
+                        points={points}
+                        vectorEffect="non-scaling-stroke"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
 
-                {/* Latest Point Marker (Red) */}
-                <circle
-                    cx={lastPoint.x}
-                    cy={lastPoint.y}
-                    r="2"
-                    fill="red"
-                    stroke="white"
-                    strokeWidth="0.5"
-                    vectorEffect="non-scaling-stroke"
-                />
-            </svg>
+                {/* Latest Point Marker (Overlay to avoid SVG aspect ratio distortion) */}
+                <div style={{
+                    position: 'absolute',
+                    left: `${lastPoint.x}%`,
+                    top: `${lastPoint.y}%`,
+                    width: '10px',
+                    height: '10px',
+                    background: 'green',
+                    border: '2px solid white',
+                    borderRadius: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    pointerEvents: 'none'
+                }} />
+            </div>
 
             {/* X Axis Labels */}
-            <div style={{ position: 'absolute', left: '25px', right: '45px', bottom: 0, display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#666' }}>
-                {[0, 5, 10, 15, 20, 25, 30].map(val => (
+            <div style={{ position: 'absolute', left: '25px', right: '45px', bottom: 0, display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#aaa', fontWeight: 600 }}>
+                {[0, 10, 20, 30, 40].map(val => (
                     <span key={val} style={{ width: '20px', textAlign: 'center' }}>{val}</span>
                 ))}
             </div>
@@ -404,13 +443,14 @@ const SimpleLineChart = ({ data, color }) => {
             <div style={{
                 position: 'absolute',
                 bottom: '-20px',
-                left: '50%',
+                left: '49%',
                 transform: 'translateX(-50%)',
-                fontSize: '10px',
-                color: '#888',
+                fontSize: '14px',
+                color: '#aaa',
                 fontWeight: 600
             }}>
                 Iterations
+
             </div>
         </div>
     );
@@ -423,8 +463,8 @@ const MetricBox = ({ label, value, highlight = false }) => (
         borderRadius: '8px',
         border: highlight ? '1px solid rgba(79, 70, 229, 0.3)' : 'border: 1px solid rgba(255, 255, 255, 0.05)'
     }}>
-        <div style={{ fontSize: '10px', color: '#888', marginBottom: '2px' }}>{label}</div>
-        <div style={{ fontSize: '15px', fontWeight: 600, color: highlight ? '#fff' : '#ddd' }}>
+        <div style={{ fontSize: '13px', color: '#aaa', marginBottom: '2px' }}>{label}</div>
+        <div style={{ fontSize: '18px', fontWeight: 700, color: highlight ? '#fff' : '#ddd' }}>
             {value || '-'}
         </div>
     </div>

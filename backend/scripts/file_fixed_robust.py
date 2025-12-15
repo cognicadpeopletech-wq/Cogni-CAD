@@ -225,10 +225,10 @@ def main():
  
         part.InWorkObject = sketch1
         part.Update()
-  
+ 
         shape_factory = part.ShapeFactory
         pad1 = None
-        
+       
         # Check if pad already exists (modify mode)
         if args.use_active:
              try:
@@ -242,7 +242,7 @@ def main():
         if pad1 is None:
             pad1 = shape_factory.AddNewPad(sketch1, float(params['pad_height']))
             print('Pad created.')
-            
+           
         part.Update()
  
         # 2) Second sketch at Z = pad height (or given)
@@ -295,7 +295,7 @@ def main():
         pocket1 = None
         created = False
         pocket_depth = float(params['pocket_depth'])
-        
+       
         if args.use_active:
              try:
                  pocket1 = body.Shapes.Item("Pocket.1")
@@ -308,7 +308,7 @@ def main():
                  created = True
              except Exception:
                  pass
-
+ 
         if not created:
             try:
                 pocket1 = shape_factory.AddNewPocket(sketch2, -pocket_depth)
@@ -367,7 +367,7 @@ def main():
                 print('Warning configuring circular pattern:', e)
         else:
             print('Warning: circular pattern creation failed.')
-
+ 
         # 5) Center Hole (Optional) - Single Instance, NOT patterned
         center_dia = float(params.get('center_hole_dia', 0.0))
         if center_dia > 0.0:
@@ -378,19 +378,19 @@ def main():
                 # axis setup (standard)
                 abs_axis3 = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
                 try_set_absolute_axis(sketch3, abs_axis3)
-                
+               
                 part.InWorkObject = sketch3
                 f2d_3 = sketch3.OpenEdition()
                 # Circle at 0,0
                 c3 = f2d_3.CreateClosedCircle(0.0, 0.0, center_dia / 2.0)
                 sketch3.CloseEdition()
                 part.Update()
-                
+               
                 # Pocket it
-                # Use same depth as other pocket, or maybe pad height? 
+                # Use same depth as other pocket, or maybe pad height?
                 # User usually implies through-all or same depth. Let's use pocket_depth.
                 pdepth = float(params['pocket_depth'])
-                
+               
                 # Logic: Try negative depth first (often forces "reverse" direction into the pad)
                 # If that fails, try positive depth and explicit Reverse propery.
                 pocket2 = None
@@ -399,7 +399,7 @@ def main():
                     part.Update()
                 except Exception:
                     pocket2 = None
-                
+               
                 if pocket2 is None:
                     try:
                         pocket2 = shape_factory.AddNewPocket(sketch3, pdepth)
@@ -410,7 +410,7 @@ def main():
                         part.Update()
                     except Exception as e:
                         print("Error in fallback pocket creation:", e)
-                
+               
                 print("Center pocket created.")
             except Exception as e:
                 print("Error creating center pocket:", e)
@@ -428,20 +428,20 @@ def main():
                 script_dir = os.path.dirname(os.path.abspath(__file__))
                 backend_dir = os.path.dirname(script_dir)
                 save_dir = os.path.join(backend_dir, "CATParts")
-                
+               
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
-                
+               
                 # Generate filename with timestamp
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"Gear_Cylinder_{timestamp}.CATPart"
                 save_path = os.path.join(save_dir, filename)
-                
+               
                 part_doc.SaveAs(save_path)
                 print(f"Part saved to: {save_path}")
             except Exception as e:
                 print(f"Error auto-saving part: {e}")
-
+ 
         print('Script finished OK.')
     except Exception:
         print('Unhandled exception in main:')

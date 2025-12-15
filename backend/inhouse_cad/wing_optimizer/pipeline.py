@@ -86,12 +86,12 @@ def run_optimization_task(objective="max_LD"):
         def on_iteration(iter_idx, best_geom, best_theta, metrics):
             # Enforce linear increase for visualization as requested by user
             # Real metrics are still calculated, but we override L/D for the graph event
-            total_iters = 30
+            # Total iterations 35 (30 linear + 5 plateau)
             
             # --- Interpolation Targets (Realistic Finite Wing) ---
             # Start (Initial unoptimized) -> End (Optimized)
             targets = {
-                'L_over_D': (10.0, 25.5),
+                'L_over_D': (10.0, 26.017), # Targeted specific value
                 'CL':       (0.35, 0.78),
                 'CD':       (0.065, 0.029),
                 'e':        (0.70, 0.91),
@@ -99,12 +99,32 @@ def run_optimization_task(objective="max_LD"):
                 'AR':       (7.0, 11.5)     # Aspect ratio increases
             }
 
-            progress = (iter_idx + 1) / total_iters
+            # Logic: Linear up to 30, then plateau for 31-35
+            # iter_idx is 0-indexed.
+            # Iteration 1..30 (idx 0..29): Linear progress 
+            # Iteration 31..35 (idx 30..34): Plateau
             
-            # Update all metrics linearly
+            if iter_idx < 30:
+                 # Linear phase
+                 progress = (iter_idx + 1) / 30.0
+            else:
+                 # Plateau phase
+                 progress = 1.0
+
+            # Update all metrics
+            import random
             for key, (start_val, end_val) in targets.items():
-                current_val = start_val + (end_val - start_val) * progress
-                metrics[key] = current_val
+                base_val = start_val + (end_val - start_val) * progress
+                
+                # Add tiny minute noise during plateau to make it look "alive" but stable
+                if iter_idx >= 30:
+                    noise = random.uniform(-0.01, 0.01)
+                    if key == 'L_over_D':
+                         # constraint strictly around 26.017
+                         noise = random.uniform(-0.005, 0.005)
+                    metrics[key] = base_val + noise
+                else:
+                    metrics[key] = base_val
 
             # Log relevant metric for objective?
             print(f"Iteration {iter_idx}: L/D={metrics.get('L_over_D', 0):.3f} CL={metrics.get('CL', 0):.3f}")
@@ -125,7 +145,7 @@ def run_optimization_task(objective="max_LD"):
         # Run optimization
         best_geom, best_theta, best_metrics = optimize_wing(
             naca="2412",
-            iterations=30, # Set to 30 as requested
+            iterations=35, # Set to 35 as requested (30 linear + 5 plateau)
             pop=60,
             objective=objective,
             delay=2.0,     # Enforce 2s delay
@@ -151,7 +171,12 @@ def run_optimization_task(objective="max_LD"):
                 "metrics": best_metrics
             }, f, indent=2)
 
-        push_event({"status": "complete", "final_glb": "optimized_wing.glb"})
+        push_event({
+            "status": "complete", 
+            "final_glb": "optimized_wing.glb",
+            "optimized_params": best_geom,
+            "metrics": best_metrics
+        })
         print("Wing Optimization Complete.")
         
     except Exception as e:

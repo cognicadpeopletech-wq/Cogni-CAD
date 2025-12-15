@@ -215,67 +215,42 @@ def main():
         pad = sf.AddNewPad(disk_sketch, float(T))
         part.Update()
         
-        # Offset Plane
-        hsf = part.HybridShapeFactory
-        try:
-            ref_xy = part.CreateReferenceFromObject(xy_plane)
-            top_plane = hsf.AddNewPlaneOffset(ref_xy, float(T), False)
-            body.InsertHybridShape(top_plane)
-            part.Update()
-            sketch_plane_ref = part.CreateReferenceFromObject(top_plane)
-        except Exception:
-            sketch_plane_ref = xy_plane
+        # Offset Plane - Disabled to ensure Pocket direction is correct (Use XY)
+        sketch_plane_ref = xy_plane
 
-    except Exception as e:
-        print(f"ERROR: Failed to create geometry: {e}")
-        return
-
-    # Determine top plane
-    sketch_plane, top_ok = find_top_plane(origin, xy_plane, pad, T)
-    if not top_ok:
-        print("Warning: Could not create top plane. Using XY plane with negative pocket depth.")
+        # Determine top plane - Unused
+        # sketch_plane, top_ok = find_top_plane(origin, xy_plane, pad, T)
 
     # Create square holes
     made = 0
     for x, y, side in holes:
-        try:
-            xc, yc = clamp_inside_disk(x, y, R)
-            
-            hole_sketch = sketches.Add(sketch_plane_ref)
-            hf2d = hole_sketch.OpenEdition()
+        xc, yc = clamp_inside_disk(x, y, R)
+        
+        hole_sketch = sketches.Add(sketch_plane_ref)
+        hf2d = hole_sketch.OpenEdition()
 
-            # CreateCenteredRectangle(CenterX, CenterY, Width, Height)
-            # Or manually if that fails (some licenses don't support it)
-            half = float(side) / 2.0
-            x1 = xc - half
-            y1 = yc - half
-            x2 = xc + half
-            y2 = yc + half
-            
-            try:
-                # Top, Right, Bottom, Left order usually for CreateLine
-                # Win32com CreateLine(x1, y1, x2, y2)
-                hf2d.CreateLine(x1, y1, x2, y1)
-                hf2d.CreateLine(x2, y1, x2, y2)
-                hf2d.CreateLine(x2, y2, x1, y2)
-                hf2d.CreateLine(x1, y2, x1, y1)
-            except Exception as e:
-                print(f"Warning: Sketch line creation failed: {e}")
-                hole_sketch.CloseEdition()
-                continue
+        # CreateCenteredRectangle(CenterX, CenterY, Width, Height)
+        # Or manually if that fails (some licenses don't support it)
+        half = float(side) / 2.0
+        x1 = xc - half
+        y1 = yc - half
+        x2 = xc + half
+        y2 = yc + half
+        
+        # Win32com CreateLine(x1, y1, x2, y2)
+        hf2d.CreateLine(float(x1), float(y1), float(x2), float(y1))
+        hf2d.CreateLine(float(x2), float(y1), float(x2), float(y2))
+        hf2d.CreateLine(float(x2), float(y2), float(x1), float(y2))
+        hf2d.CreateLine(float(x1), float(y2), float(x1), float(y1))
 
-            hole_sketch.CloseEdition()
-            
-            part.InWorkObject = hole_sketch
-            part.Update()
-            
-            sf.AddNewPocket(hole_sketch, float(T))
-            part.Update()
-            made += 1
-            
-        except Exception as e:
-            print(f"ERROR: Exception while creating hole at ({x},{y}):", e)
-            continue
+        hole_sketch.CloseEdition()
+        
+        part.InWorkObject = hole_sketch
+        part.Update()
+        
+        sf.AddNewPocket(hole_sketch, float(T))
+        part.Update()
+        made += 1
 
     print(f"Done: Disk diameter={disk_dia} mm, thickness={T} mm, square_holes={made}")
     if args.cmd:

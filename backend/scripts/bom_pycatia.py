@@ -46,8 +46,8 @@ except:
 def fallback_bom(path: Path):
     base = path.stem
     return [
-        {"Item": 1, "PartNumber": f"{base}-001", "Description": "Main assembly (Simulated)", "Qty": 1, "Material": "AL", "Mass (kg)": 1.5, "Volume (m3)": 0.002},
-        {"Item": 2, "PartNumber": f"{base}-002", "Description": "Bolt M6x20 (Simulated)", "Qty": 8, "Material": "Steel", "Mass (kg)": 0.05, "Volume (m3)": 0.0001},
+        {"Item": 1, "PartNumber": f"{base}-001", "Description": "Main assembly (Simulated)", "Qty": 1, "Mass (kg)": 1.5, "Volume (m3)": 0.002},
+        {"Item": 2, "PartNumber": f"{base}-002", "Description": "Bolt M6x20 (Simulated)", "Qty": 8, "Mass (kg)": 0.05, "Volume (m3)": 0.0001},
     ]
 
 
@@ -73,18 +73,19 @@ def write_pdf(rows, out_pdf):
     
     if rows:
         keys = list(rows[0].keys())
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(40, y, " | ".join(keys))
+        c.setFont("Helvetica-Bold", 8)
+        header = " | ".join(keys)
+        c.drawString(20, y, header)
         y -= 20
-        c.setFont("Helvetica", 10)
+        c.setFont("Helvetica", 8)
 
         for r in rows:
-            line = " | ".join(str(r.get(k, "")) for k in keys)
-            c.drawString(40, y, line)
-            y -= 14
+            line = " | ".join(str(r.get(k, ""))[:20] for k in keys)
+            c.drawString(20, y, line)
+            y -= 12
             if y < 40:
                 c.showPage()
-                c.setFont("Helvetica", 10)
+                c.setFont("Helvetica", 8)
                 y = h - 40
     c.save()
 
@@ -92,14 +93,11 @@ def write_pdf(rows, out_pdf):
 # ===========================
 # RECURSIVE BOM (COM)
 # ===========================
-# ===========================
-# RECURSIVE BOM (COM)
-# ===========================
-def extract_product_recursive(prod, rows, get_props_func, level=0):
+def traverse_bom(product, rows, spa_workbench, level=0):
     """Recursive BOM extraction via COM."""
     
     try:
-        children = prod.Products
+        children = product.Products
         count = children.Count
     except:
         return
@@ -107,36 +105,57 @@ def extract_product_recursive(prod, rows, get_props_func, level=0):
     for i in range(1, count + 1):
         try:
             item = children.Item(i)
-            # ReferenceProduct
+            
+            # Get Reference Product (The actual Part/SubAssembly file)
             try: ref = item.ReferenceProduct
             except: ref = item
             
-            pn = ""
-            try: pn = ref.PartNumber
+            part_number = ""
+            try: part_number = ref.PartNumber
+            except: part_number = item.PartNumber # Fallback to instance name if ref fails
+            
+            description = ""
+            try: description = ref.DescriptionRef
             except: pass
             
-            desc = ""
-            try: desc = ref.DescriptionRef
-            except: pass 
+            # --- Properties (Mass, Volume) ---
+            mass = 0.0
+            volume = 0.0
             
-            # Use Helper passing BOTH Instance (item) and Reference (ref)
-            mat, mass, vol = get_props_func(ref, item)
+            # Mass/Volume from generic Measurable (Inertia)
+            if spa_workbench:
+                try:
+                    # Measuring the Reference typically gives the Part properties
+                    measurable = spa_workbench.GetMeasurable(ref)
+                    mass = measurable.Mass
+                    volume = measurable.Volume
+                except:
+                    # Fallback to Analyze object
+                    try:
+                        mass = ref.Analyze.Mass
+                        volume = ref.Analyze.Volume
+                    except: pass
             
+            # Rounding
+            mass = round(mass, 4)
+            volume = round(volume, 6)
+            
+            # Add Row
             rows.append({
                 "Item": len(rows) + 1,
-                "PartNumber": pn,
-                "Description": desc,
-                "Qty": 1,
-                "Material": mat,
+                "PartNumber": part_number,
+                "Description": description,
+                "Qty": 1, 
                 "Mass (kg)": mass,
-                "Volume (m3)": vol
+                "Volume (m3)": volume
             })
             
             # Recurse
-            if ref.Products.Count > 0:
-                extract_product_recursive(ref, rows, get_props_func, level+1)
+            if hasattr(ref, "Products") and ref.Products.Count > 0:
+                traverse_bom(ref, rows, spa_workbench, level+1)
 
         except Exception as e:
+            # print(f"Error processing item {i}: {e}", file=sys.stderr)
             pass
 
 
@@ -162,116 +181,52 @@ def main():
             # Connect to CATIA
             app = win32com.client.Dispatch("CATIA.Application")
             app.Visible = True 
-            
-            # Material Manager (Global)
-            manager = None
-            try: manager = app.GetItem("CATIAMaterialManager")
-            except: pass
+            app.DisplayFileAlerts = False # Suppress popups
 
             # Open Document
             print(f"Opening: {input_path}...", file=sys.stderr)
             doc = app.Documents.Open(str(input_path))
             
-            # Extract
             product = doc.Product
             
-            # Helper for properties
-            def get_props(prod_ref, prod_inst=None):
-                mat = ""
-                mass = 0.0
-                vol = 0.0
-                
-                # 1. UserRefProperties (Legacy)
+            # CRITICAL: Force Design Mode to load geometry for mass props
+            try:
+                product.ApplyWorkMode(1) # 1 = DESIGN_MODE
+            except:
+                print("Warning: Could not switch to Design Mode.", file=sys.stderr)
+            
+            # Get SPAWorkbench for measurements
+            spa = None
+            try:
+                spa = doc.GetWorkbench("SPAWorkbench")
+            except: pass
+
+            # --- Extract Root ---
+            # Root properties can be tricky, try best effort
+            root_pn = product.PartNumber
+            root_desc = getattr(product, "DescriptionRef", "")
+            root_mass = 0.0
+            root_vol = 0.0
+            if spa:
                 try:
-                    props = prod_ref.UserRefProperties
-                    for j in range(1, props.Count + 1):
-                        p = props.Item(j)
-                        if "material" in p.Name.lower():
-                            mat = str(p.Value)
-                            break
+                    measurable = spa.GetMeasurable(product)
+                    root_mass = measurable.Mass
+                    root_vol = measurable.Volume
                 except: pass
-                
-                # 2. CATIAMaterialManager
-                if not mat and manager:
-                    # A. Check Instance (if provided)
-                    if prod_inst:
-                        try:
-                            oMat = manager.GetMaterialOnProduct(prod_inst)
-                            if oMat: mat = oMat.Name
-                        except: pass
-                    
-                    # B. Check Reference (if not found on instance)
-                    if not mat:
-                        try:
-                            oMat = manager.GetMaterialOnProduct(prod_ref)
-                            if oMat: mat = oMat.Name
-                        except: pass
-                    
-                    # C. Check Part/Body (if Reference is a Part)
-                    if not mat:
-                        try:
-                            parent_doc = prod_ref.Parent
-                            if hasattr(parent_doc, "Part"):
-                                part = parent_doc.Part
-                                # Body
-                                try:
-                                    oMat = manager.GetMaterialOnBody(part.MainBody)
-                                    if oMat: mat = oMat.Name
-                                except: pass
-                                # Part
-                                if not mat:
-                                    try:
-                                        oMat = manager.GetMaterialOnPart(part)
-                                        if oMat: mat = oMat.Name
-                                    except: pass
-                                
-                                # D. Parameter Fallback (Inside Part)
-                                if not mat and "part" in locals():
-                                    try:
-                                        params = part.Parameters
-                                        for k in range(1, params.Count + 1):
-                                            pm = params.Item(k)
-                                            if pm.Name.split("\\")[-1].lower() == "material":
-                                                try: mat = str(pm.ValueAsString())
-                                                except: mat = str(pm.Value)
-                                                break
-                                    except: pass
-                        except: pass
-
-                # Mass / Volume (Inertia)
-                try:
-                    spa = doc.GetWorkbench("SPAWorkbench")
-                    # Try measuring instance first, else reference
-                    target = prod_inst if prod_inst else prod_ref
-                    measurable = spa.GetMeasurable(target)
-                    mass = measurable.Mass # kg
-                    vol = measurable.Volume # m3
-                except:
-                    try:
-                        mass = prod_ref.Analyze.Mass
-                        vol = prod_ref.Analyze.Volume
-                    except: pass
-                
-                return mat, round(mass, 4), round(vol, 6)
-
-            # Add root item (Reference only, no Instance)
-            root_mat, root_mass, root_vol = get_props(product, None)
+            
             rows.append({
-                "Item": 1, 
-                "PartNumber": product.PartNumber, 
-                "Description": getattr(product, "DescriptionRef", "") or "Root", 
-                "Qty": 1, 
-                "Material": root_mat,
-                "Mass (kg)": root_mass,
-                "Volume (m3)": root_vol
+                "Item": 1,
+                "PartNumber": root_pn,
+                "Description": root_desc,
+                "Qty": 1,
+                "Mass (kg)": round(root_mass, 4),
+                "Volume (m3)": round(root_vol, 6)
             })
+
+            # --- Traverse Children ---
+            traverse_bom(product, rows, spa)
             
-            # Extract children
-            extract_product_recursive(product, rows, get_props)
-            
-            # doc.Close() # User requested to see it open? "THAT FILE NEED TO OPEN IN CATIA... AND LATER... SAVED". 
-            # We keeps it open or close? Usually strictly better to Keep Open if user wants to see. 
-            # I will leave it open.
+            # doc.Close() 
             
         except Exception:
             print("CATIA Extraction Failed:", file=sys.stderr)
@@ -286,16 +241,40 @@ def main():
     if not rows:
         used_fallback = True
         rows = fallback_bom(input_path)
+        
+    # Aggregate Duplicates (Optional improvement)
+    # Group by PartNumber and Sum Qty?
+    # For now, user asked for full extraction, let's keep flattened list or
+    # implement simple condensation:
+    
+    unique_rows = {}
+    ordered_keys = []
+    
+    for r in rows:
+        key = r["PartNumber"]
+        if not key: key = f"Unknown-{r['Item']}"
+        
+        if key in unique_rows:
+            unique_rows[key]["Qty"] += 1
+        else:
+            unique_rows[key] = r
+            ordered_keys.append(key)
+            
+    final_rows = [unique_rows[k] for k in ordered_keys]
+    
+    # Re-index Item numbers
+    for idx, r in enumerate(final_rows):
+        r["Item"] = idx + 1
 
     # File Naming
-    stem = input_path.stem.replace(" ", "_").replace("-", "_")
-    csv_path = out_dir / f"{stem}_BOM.csv"
-    xlsx_path = out_dir / f"{stem}_BOM.xlsx"
-    pdf_path = out_dir / f"{stem}_BOM.pdf"
+    stem = "Bill_of_materials"
+    csv_path = out_dir / f"{stem}.csv"
+    xlsx_path = out_dir / f"{stem}.xlsx"
+    pdf_path = out_dir / f"{stem}.pdf"
 
-    write_csv(rows, csv_path)
-    write_xlsx(rows, xlsx_path)
-    write_pdf(rows, pdf_path)
+    write_csv(final_rows, csv_path)
+    write_xlsx(final_rows, xlsx_path)
+    write_pdf(final_rows, pdf_path)
 
     def to_web(p: Path):
         # Assumes /downloads mount
