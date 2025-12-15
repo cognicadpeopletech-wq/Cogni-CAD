@@ -145,10 +145,10 @@ def build_rib_and_slot(params: dict):
 
     part.Update()
 
-    return {
-        "status": "success",
-        "message": "Rib and Slot generated successfully"
-    }
+    # return {
+    #     "status": "success",
+    #     "message": "Rib and Slot generated successfully"
+    # }
 
 # ============================================================================ #
 # CLI EXECUTION SUPPORT (FOR main.py OR MANUAL RUN)
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     # Run CATIA geometry creation
     try:
         result = build_rib_and_slot(params)
-        print("SUCCESS: CATIA Rib-Slot built successfully.")
+        # print("SUCCESS: CATIA Rib-Slot built successfully.")
         print(json.dumps(result, indent=4))
     except Exception as e:
         print(f"ERROR: {e}")

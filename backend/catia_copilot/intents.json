@@ -177,7 +177,8 @@
       "apply general tolerance rules ISO2768",
       "update drawing with ISO 2768 tolerances",
       "implement ISO2768 tolerance scheme",
-      "apply ISO 2768 to current drawing"
+      "apply ISO 2768 to current drawing",
+      "Apply General Tolerance ISO2768 to the CAD 2D drawing "
     ]
   },
   "Apply ISO 20457 Tolerances": {
@@ -195,7 +196,9 @@
       "use ISO 20457 to set tolerance values",
       "update drawing with ISO 20457 tolerances",
       "apply ISO20457 to current drawing",
-      "assign moulding tolerance classes ISO20457"
+      "assign moulding tolerance classes ISO20457",
+      "Apply ISO 20457 Tolerance to the CAD 2D drawing",
+      "Apply Tolerance ISO 20457 to the CAD 2D Drawing"
     ]
   },
   "Open Catia Application": {
@@ -460,6 +463,13 @@
     "examples": [
       "Create 12 equally spaced holes on a 100 mm disk",
       "Perimeter square holes on disk diameter 80 thickness 4"
+    ]
+  },
+  "Update Parameters": {
+    "script": "update_parameters 2.py",
+    "description": "Updates parameters in loaded model and saves as STP (update_parameters 2.py)",
+    "examples": [
+      "Apply parametric changes to the loaded CAD model and save this model in STP format."
     ]
   },
   "hi": {

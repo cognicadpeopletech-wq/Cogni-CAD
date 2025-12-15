@@ -115,7 +115,7 @@ if STATIC_DIR.exists():
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR)) if TEMPLATES_DIR.exists() else None
 
 # --- Script definitions ---
-SCRIPT_TIMEOUT = 120
+SCRIPT_TIMEOUT = 600 # Increased for batch operations
 
 # Map User Intents to Scripts
 RECT_ROD_SCRIPT = "catia_create_parts_dynamic_rectrod.py"
@@ -392,7 +392,7 @@ async def run_command(request: Request):
         })
         
     # 2. BOM Check (Snippet Logic)
-    bom_triggers = ("bom", "bill of materials", "bill-of-materials", "generate bom", "create bom", "export bom", "generate bill")
+    bom_triggers = ("bom", "bill of materials", "bill-of-materials", "load dirt bike and generate BOM ", "create bom", "export bom", "generate bill")
     if any(k in s for k in bom_triggers):
         # Snippet logic for handling BOM
         uploaded_path = (data.get("uploaded_file") or data.get("uploaded_path") or data.get("uploaded") or data.get("input"))
@@ -463,13 +463,16 @@ async def run_command(request: Request):
                 # JSON Check
                 try:
                      out_json = json.loads(out) if out.strip().startswith("{") else None
-                     if out_json: return JSONResponse(out_json)
+                     if out_json:
+                          if "output" not in out_json:
+                              out_json["output"] = f"✅ Task Completed Successfully in {time_sec} Seconds"
+                          return JSONResponse(out_json)
                 except: pass
 
-                msg = f"✅ Task Completed Successfully \n"
-                if out: msg += f"Output:\n{out}\n"
-                if err: msg += f"Stderr:\n{err}\n"
-                if error: msg = f"❌ Error: {error}"
+                msg = f"✅ Task Completed Successfully in {time_sec} Seconds"
+                # if out: msg += f"Output:\n{out}\n"
+                # if err: msg += f"Stderr:\n{err}\n"
+                # if error: msg = f"❌ Error: {error}"
                 return JSONResponse({"output": msg, "time": time_sec})
             else:
                  logging.warning(f"Routed script {routed_script} not found on disk at {script_path}.")
@@ -497,10 +500,10 @@ async def run_command(request: Request):
             # Run
             out, err, time_sec, error = run_script_with_timer(str(script_path), args=flags, timeout=SCRIPT_TIMEOUT)
             
-            msg = f"✅ Executed {script_name}\n"
-            if out: msg += f"Output:\n{out}\n"
-            if err: msg += f"Stderr:\n{err}\n"
-            if error: msg = f"❌ Error: {error}"
+            msg = f"✅ Task Completed Successfully in {time_sec} Seconds"
+            # if out: msg += f"Output:\n{out}\n"
+            # if err: msg += f"Stderr:\n{err}\n"
+            # if error: msg = f"❌ Error: {error}"
             
             return JSONResponse({"output": msg, "time": time_sec})
         else:
@@ -559,15 +562,19 @@ async def upload_file(
     convert: str = Form(None)
 ):
     try:
-        ext = os.path.splitext(file.filename)[1].lower()
-        safe_name = f"{uuid.uuid4()}{ext}"
+        # Use original filename (sanitized) to allow explicit loading by name
+        filename = os.path.basename(file.filename)
+        # Basic sanitization
+        filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', filename)
+        
         upload_dir = STATIC_DIR / "uploads"
         upload_dir.mkdir(parents=True, exist_ok=True)
-        file_path = upload_dir / safe_name
+        file_path = upload_dir / filename
+        
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        file_url = f"http://127.0.0.1:8000/static/uploads/{safe_name}"
+        file_url = f"http://127.0.0.1:8000/static/uploads/{filename}"
         msg = f"Uploaded {file.filename} successfully."
         
         # BOM Handling
@@ -576,7 +583,7 @@ async def upload_file(
              return JSONResponse({"url": file_url, "message": f"BOM Uploaded. Preview:\n{content[:200]}..."})
 
         # Return filename for optional conversion
-        return JSONResponse({"url": file_url, "message": msg, "filename": safe_name})
+        return JSONResponse({"url": file_url, "message": msg, "filename": filename})
         
     except Exception as e:
         logging.error(f"Upload failed: {e}")
@@ -590,7 +597,9 @@ async def convert_file(filename: str = Form(...)):
         if not file_path.exists():
              return JSONResponse({"error": "File not found"}, status_code=404)
         
-        glb_name = f"{uuid.uuid4()}.glb"
+        # Derive GLB name from original filename
+        base_name = os.path.splitext(filename)[0]
+        glb_name = f"{base_name}.glb"
         glb_path = upload_dir / glb_name
         converted_url = f"http://127.0.0.1:8000/static/uploads/{glb_name}"
         msg = "Conversion completed."
@@ -607,7 +616,9 @@ async def convert_file(filename: str = Form(...)):
             model = cq.importers.importStep(str(file_path))
             
             # 2. Rotate -90 X (Z-up to Y-up)
-            model = model.rotate((0,0,0), (1,0,0), -90)
+            # 2. Rotation Adjustment
+            # Rotate around Y-axis (Up) to turn "Front View" (facing camera) into "Side View" (Profile)
+            model = model.rotate((0,0,0), (0,1,0), 90)
             
             # 3. Export Intermediate STL
             with tempfile.NamedTemporaryFile(suffix=".stl", delete=False) as tmp_stl:

@@ -60,6 +60,36 @@ const snapToFeature = (intersect, cam) => {
   return point;
 };
 
+// --- COMPONENT: Error Boundary for Suspense ---
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ModelViewer Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Html center>
+          <div style={{ color: 'red', background: 'rgba(0,0,0,0.8)', padding: '20px', borderRadius: '8px', border: '1px solid red' }}>
+            <h3>Error Loading Model</h3>
+            <p>{this.state.error?.message || "Unknown error"}</p>
+          </div>
+        </Html>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // --- COMPONENT: Fixed Size Marker ---
 // --- COMPONENT: Fixed Size Marker (Scaled by Distance) ---
 const FixedSizeMarker = ({ position, label }) => {
@@ -115,45 +145,91 @@ const FaceHighlight = ({ vertices }) => {
 };
 
 // --- COMPONENT: MeasurementMarkers ---
-const MeasurementMarkers = () => {
+const MeasurementMarkers = ({ sceneRef }) => {
   const { measurePoints } = useUIStore();
   const [labels, setLabels] = useState([]);
+  const [currentWorldPoints, setCurrentWorldPoints] = useState([]);
+  const [lines, setLines] = useState([]);
 
-  useEffect(() => {
-    // Label calculation logic (kept separate from rendering Line for clarity)
-    if (measurePoints.length < 2) {
-      setLabels([]);
+  // Ref to store current actual positions to avoid state lag
+  const pointsRef = useRef([]);
+
+  useFrame(() => {
+    if (!measurePoints || measurePoints.length === 0) {
+      if (currentWorldPoints.length > 0) setCurrentWorldPoints([]);
       return;
     }
-    const newLabels = [];
-    const p1 = measurePoints[0].point;
-    const p2 = measurePoints[1].point;
 
-    if (measurePoints.length === 2 && p1 && p2) {
+    const newWorldPoints = measurePoints.map((mp, index) => {
+      // 1. If we have localPoint + objectUuid, calculate world position dynamically
+      if (mp.localPoint && mp.objectUuid && sceneRef.current) {
+        const targetObj = sceneRef.current.getObjectByProperty('uuid', mp.objectUuid);
+        if (targetObj) {
+          // Clone local point and apply current world matrix of the object
+          return targetObj.localToWorld(mp.localPoint.clone());
+        }
+      }
+      // 2. Fallback to static point if no attachment (shouldn't happen with new logic but safe)
+      return mp.point.clone();
+    });
+
+    // Check if points changed enough to trigger re-render or just update ref
+    // For React performacne, we update a Ref for 'Line' geometry mostly, 
+    // but here we are using declarative <Line> and <FixedSizeMarker>.
+    // Let's perform a shallow check or just update state for simplicity on every frame if needed? 
+    // Updating state every frame is bad. 
+    // BETTER: Use refs for the Mesh positions directly in a real app, but 
+    // adapting to this code structure, let's update state only if significant movement?
+    // Actually, for "sticking" effectively during rotation, we need high freq updates.
+    // Let's update a ref-based structure or assume React-Three-Fiber handles frequent prop updates well enough?
+    // Optimization: We will output 'currentWorldPoints' to state 
+    // but maybe throttle it? No, rotation needs to be smooth.
+
+    // Let's Try: Just update state. 
+    // NOTE: In production, moving this to a custom ShaderMaterial or direct DOM updates implies less React overhead.
+    // For now, let's see if setting state every frame kills it. (Usually it's okay for < 5 items).
+    // To strictly avoid React re-renders, we'd need to manipulate refs of the markers directly.
+
+    // FAST PATCH: Just set state for now.
+    setCurrentWorldPoints(newWorldPoints);
+  });
+
+  // Calculate Labels & Lines only when world points update
+  useEffect(() => {
+    if (currentWorldPoints.length < 2) {
+      setLabels([]);
+      setLines([]);
+      return;
+    }
+
+    // Prepare Lines
+    const linePts = currentWorldPoints.map((p) => [p.x, p.y, p.z]);
+    if (currentWorldPoints.length === 3) {
+      // Close loop
+      linePts.push([currentWorldPoints[0].x, currentWorldPoints[0].y, currentWorldPoints[0].z]);
+    }
+    setLines(linePts);
+
+    const newLabels = [];
+    const p1 = currentWorldPoints[0];
+    const p2 = currentWorldPoints[1];
+
+    if (currentWorldPoints.length === 2 && p1 && p2) {
       const dist = p1.distanceTo(p2);
       const mid = p1.clone().add(p2).multiplyScalar(0.5);
 
-      let projStr = "";
-      if (measurePoints[0].normal && measurePoints[1].normal) {
-        const n1 = measurePoints[0].normal;
-        const n2 = measurePoints[1].normal;
-        if (Math.abs(n1.dot(n2)) > 0.8) {
-          const vec = p2.clone().sub(p1);
-          const pDist = Math.abs(vec.dot(n1));
-          projStr = pDist.toFixed(2);
-        }
-      }
+      // (Optional) Project logic if normals exist in store... 
+      // Complicated because we need rotated normals. 
+      // For now simplifying to just Distance.
 
       newLabels.push({
         pos: mid,
         text: `${dist.toFixed(2)} mm`,
-        subText: projStr ? `Face Dist: ${projStr} mm` : null
       });
     }
 
-    if (measurePoints.length === 3) {
-      const p3 = measurePoints[2].point;
-      // Tri/Circle logic
+    if (currentWorldPoints.length === 3) {
+      const p3 = currentWorldPoints[2];
       const a = p1.distanceTo(p2);
       const b = p2.distanceTo(p3);
       const c = p3.distanceTo(p1);
@@ -169,29 +245,21 @@ const MeasurementMarkers = () => {
       }
     }
     setLabels(newLabels);
-  }, [measurePoints]);
+
+  }, [currentWorldPoints]);
+
 
   if (!measurePoints || measurePoints.length === 0) return null;
 
-  // Prepare points array for Line component
-  // measurePoints contains { point: Vector3 }
-  const linePoints = measurePoints.map(mp => [mp.point.x, mp.point.y, mp.point.z]);
-
-  // Close the loop if 3 points (triangle)
-  if (measurePoints.length === 3) {
-    linePoints.push([measurePoints[0].point.x, measurePoints[0].point.y, measurePoints[0].point.z]);
-  }
-
   return (
     <group>
-      {measurePoints.map((mp, i) => (
-        <FixedSizeMarker key={i} position={[mp.point.x, mp.point.y, mp.point.z]} />
+      {currentWorldPoints.map((pt, i) => (
+        <FixedSizeMarker key={i} position={[pt.x, pt.y, pt.z]} />
       ))}
 
-      {/* The visible green line asked by user */}
-      {(measurePoints.length === 2 || measurePoints.length === 3) && (
+      {(lines.length > 0) && (
         <Line
-          points={linePoints}
+          points={lines}
           color="#ff0000"
           lineWidth={5}
           depthTest={true}
@@ -229,7 +297,7 @@ const MeasurementMarkers = () => {
  * - Fixes common CAD material issues (too transparent / too metallic)
  * - Uses legacy pivot centering logic (no forced scaling)
  */
-function ModelViewer({ url, onModelReady }) {
+function ModelViewer({ url, onModelReady, setSceneRef }) {
   const { scene } = useGLTF(url);
   const clonedScene = React.useMemo(() => scene.clone(), [scene]);
   const { measureMode, addMeasurePoint, explodeMode, colorMode, transformMode } = useUIStore();
@@ -245,6 +313,11 @@ function ModelViewer({ url, onModelReady }) {
   // Store model size for dynamic scaling
   const modelSize = useRef(0);
   const [selectedFaceVerts, setSelectedFaceVerts] = useState(null);
+
+  // Pass scene ref back up for MeasureMarkers to use
+  useEffect(() => {
+    if (setSceneRef) setSceneRef(clonedScene);
+  }, [clonedScene, setSceneRef]);
 
   useEffect(() => {
     if (!clonedScene) return;
@@ -408,25 +481,48 @@ function ModelViewer({ url, onModelReady }) {
 
     let finalPoint = new THREE.Vector3(e.point.x, e.point.y, e.point.z);
     let finalNormal = null;
+    let objectUuid = null;
+    let localPoint = null;
 
-    // Handle Face Selection
-    if (e.object && e.face) {
-      const positions = e.object.geometry.attributes.position;
-      const vA = new THREE.Vector3().fromBufferAttribute(positions, e.face.a);
-      const vB = new THREE.Vector3().fromBufferAttribute(positions, e.face.b);
-      const vC = new THREE.Vector3().fromBufferAttribute(positions, e.face.c);
+    // Handle Face Selection & Info Capture
+    if (e.object) {
+      objectUuid = e.object.uuid;
+      // Store Point in Local Space for sticking
+      localPoint = e.object.worldToLocal(finalPoint.clone());
 
-      e.object.localToWorld(vA);
-      e.object.localToWorld(vB);
-      e.object.localToWorld(vC);
+      if (e.face) {
+        const positions = e.object.geometry.attributes.position;
+        const vA = new THREE.Vector3().fromBufferAttribute(positions, e.face.a);
+        const vB = new THREE.Vector3().fromBufferAttribute(positions, e.face.b);
+        const vC = new THREE.Vector3().fromBufferAttribute(positions, e.face.c);
 
-      setSelectedFaceVerts([vA, vB, vC]);
+        e.object.localToWorld(vA);
+        e.object.localToWorld(vB);
+        e.object.localToWorld(vC);
+
+        setSelectedFaceVerts([vA, vB, vC]);
+      }
     }
 
     if (!measureMode) return;
 
     if (e.point) {
-      finalPoint = snapToFeature(e, camera);
+      // Improved Snap with tighter threshold
+      // We pass the RAW intersection to helper, but we might want to check the snapped point
+      // against the object again to get clean local coords. 
+      // For now, let's just use the raw intersection for local-sticking
+      // OR re-calculate local if snap changes it.
+
+      const snapped = snapToFeature(e, camera);
+
+      // If snapped point is different, we should re-calculate localPoint relative to object
+      // But which object? The same one we hit? Yes usually.
+      if (!snapped.equals(finalPoint)) {
+        if (e.object) {
+          localPoint = e.object.worldToLocal(snapped.clone());
+          finalPoint = snapped;
+        }
+      }
 
       if (e.face && e.object) {
         const normalMatrix = new THREE.Matrix3().getNormalMatrix(e.object.matrixWorld);
@@ -434,7 +530,9 @@ function ModelViewer({ url, onModelReady }) {
       }
 
       addMeasurePoint({
-        point: finalPoint, // Store needs 'point'
+        point: finalPoint, // Initial World Point
+        localPoint: localPoint,
+        objectUuid: objectUuid,
         normal: finalNormal
       });
     }
@@ -492,7 +590,7 @@ function CameraController({ onReady, autoRotate, enableDamping = true, modelMaxD
       makeDefault
       autoRotate={autoRotate}
       autoRotateSpeed={4.0}
-      enableDamping={enableDamping}
+      enableDamping={true}
       dampingFactor={0.1}
       zoomSpeed={0.8}
       rotateSpeed={1.5}
@@ -503,7 +601,7 @@ function CameraController({ onReady, autoRotate, enableDamping = true, modelMaxD
 }
 
 const ThreeCanvas = ({ mode }) => {
-  const { latestResult, orientationCubeVisible, measurePoints, setExplodeMode, setColorMode, setMeasureMode } = useUIStore();
+  const { latestResult, orientationCubeVisible, measurePoints, setExplodeMode, setColorMode, setMeasureMode, clearMeasurePoints, measureMode } = useUIStore();
   const [modelUrl, setModelUrl] = useState('/models/V3_DIRT_BIKE_3.compressed.glb');
   const [cameraControls, setCameraControls] = useState(null);
   const [mainModel, setMainModel] = useState(null);
@@ -511,8 +609,11 @@ const ThreeCanvas = ({ mode }) => {
 
   // Stability Controls
   const [autoRotate, setAutoRotate] = useState(false);
-  const [enableDamping, setEnableDamping] = useState(true);
+
   const initialCameraSet = useRef(false); // Guard against reset
+
+  // Scene Ref for Measurement Logic
+  const sceneHelpersRef = useRef(null);
 
   useEffect(() => {
     if (latestResult && latestResult.glb_url !== undefined) {
@@ -587,11 +688,16 @@ const ThreeCanvas = ({ mode }) => {
     }
   };
 
+  /* 
+    Updated handleViewChange:
+    - Sets camera position based on relative view direction
+    - Validates calculate distance to prevent NaN/Infinity (Blank Screen fix)
+    - Disables damping for instant snap
+  */
   const handleViewChange = React.useCallback((view) => {
     if (!cameraControls?.camera || !cameraControls?.controls) return;
 
     // 1. Force Stability
-    setEnableDamping(false);
     setAutoRotate(false);
     if (cameraControls.controls) {
       cameraControls.controls.enableDamping = false;
@@ -603,6 +709,7 @@ const ThreeCanvas = ({ mode }) => {
 
     // 2. Relative Logic - Align with Model's Rotation
     const modelQuat = mainModel ? mainModel.quaternion.clone() : new THREE.Quaternion();
+
     let offset = new THREE.Vector3();
     let up = new THREE.Vector3(0, 1, 0);
 
@@ -618,30 +725,84 @@ const ThreeCanvas = ({ mode }) => {
     up.applyQuaternion(modelQuat);
 
     // 3. Snap Position (Match Initial Load Zoom)
-    const size = modelMaxDim > 0 ? modelMaxDim : 10;
+    const size = (modelMaxDim && modelMaxDim > 0) ? modelMaxDim : 10;
     const fov = camera.fov * (Math.PI / 180);
+
     // Calculate distance to fit the object perfectly given the FOV
     let dist = (size / 2) / Math.tan(fov / 2);
 
+    // Safety check for invalid distance (NaN or Infinity)
+    if (!Number.isFinite(dist) || dist <= 0) {
+      dist = 10; // Fallback
+    }
+
     // Apply the same padding multiplier as the initial load (1.5x)
-    // This ensures consistent zoom levels between initial load and view switches
     dist *= 1.5;
 
-    camera.position.copy(target.clone().add(offset.multiplyScalar(dist)));
-    camera.up.copy(up);
-    camera.lookAt(target);
-    controls.update();
+    // Final safety check before applying
+    if (Number.isFinite(dist)) {
+      camera.position.copy(target.clone().add(offset.multiplyScalar(dist)));
+      camera.up.copy(up);
+      camera.lookAt(target);
+      controls.update();
+    } else {
+      console.warn("handleViewChange: Calculated distance is invalid", dist);
+    }
 
   }, [cameraControls, modelMaxDim, mainModel]);
 
-  /* Existing handleCubeRotate logic matches OrientationCube updates */
-  const handleCubeRotate = (rotation) => {
-    if (mainModel) {
-      mainModel.rotation.x = rotation.x;
-      mainModel.rotation.y = rotation.y;
-      mainModel.rotation.z = rotation.z;
+
+
+  // New: Handle Cube Drag -> Orbit Camera
+  // New: Handle Cube Drag -> Orbit Camera
+  const handleCubeDrag = React.useCallback(({ dx, dy }) => {
+    if (cameraControls?.controls && cameraControls?.camera) {
+      const { controls, camera } = cameraControls;
+
+      const rotSpeed = 0.01; // Radians per pixel
+
+      // Calculate offset from target
+      const offset = new THREE.Vector3().copy(camera.position).sub(controls.target);
+
+      // Convert to Spherical coordinates
+      const spherical = new THREE.Spherical().setFromVector3(offset);
+
+      // Apply rotation deltas
+      // dx (horizontal drag) -> change theta (azimuth)
+      spherical.theta -= dx * rotSpeed;
+
+      // dy (vertical drag) -> change phi (polar)
+      spherical.phi -= dy * rotSpeed;
+
+      // Clamp vertical angle to prevent flipping (0 to PI)
+      spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, spherical.phi));
+
+      // Convert back to Cartesian and apply to camera
+      offset.setFromSpherical(spherical);
+      camera.position.copy(controls.target).add(offset);
+      camera.lookAt(controls.target);
+
+      // Sync controls state
+      controls.update();
     }
-  };
+  }, [cameraControls]);
+
+  // Handle Cube Interaction State (Disable damping/autoRotate for direct control)
+  const handleCubeInteractionStart = React.useCallback(() => {
+    if (cameraControls?.controls) {
+      cameraControls.controls.enableDamping = false;
+      cameraControls.controls.autoRotate = false;
+      setAutoRotate(false);
+      setEnableDamping(false);
+    }
+  }, [cameraControls]);
+
+  const handleCubeInteractionEnd = React.useCallback(() => {
+    if (cameraControls?.controls) {
+      cameraControls.controls.enableDamping = true;
+      setEnableDamping(true);
+    }
+  }, [cameraControls]);
 
   // Sync Text-Based Rotation from Store
   const { modelRotation, requestedView, setRequestedView } = useUIStore();
@@ -656,23 +817,16 @@ const ThreeCanvas = ({ mode }) => {
     initialCameraSet.current = false; // Reset guard logic
   }, [modelUrl]);
 
-  // Effect: Re-enable damping on manual interaction
-  useEffect(() => {
-    if (cameraControls?.controls) {
-      const onStart = () => {
-        setEnableDamping(true);
-        setAutoRotate(false); // Stop autorotate on user interact
-      };
-      cameraControls.controls.addEventListener('start', onStart);
-      return () => cameraControls.controls.removeEventListener('start', onStart);
-    }
-  }, [cameraControls]);
 
+
+  // Legacy model rotation sync removed to prevent conflict with OrbitControls
+  /*
   useEffect(() => {
     if (mainModel) {
       mainModel.rotation.y = modelRotation.y;
     }
   }, [mainModel, modelRotation]);
+  */
 
   // Sync Natural Language View Control
   useEffect(() => {
@@ -705,8 +859,10 @@ const ThreeCanvas = ({ mode }) => {
       {orientationCubeVisible && (
         <OrientationCube
           onViewChange={handleViewChange}
-          onRotate={handleCubeRotate}
-          mainModel={mainModel}
+          onRotateDelta={handleCubeDrag}
+          mainCamera={cameraControls?.camera}
+          onInteractionStart={handleCubeInteractionStart}
+          onInteractionEnd={handleCubeInteractionEnd}
         />
       )}
 
@@ -725,6 +881,11 @@ const ThreeCanvas = ({ mode }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.2;
         }}
+        onPointerMissed={() => {
+          if (measureMode) {
+            clearMeasurePoints();
+          }
+        }}
       >
         <ambientLight intensity={1.5} />
         <directionalLight position={[5, 12, 8]} intensity={2.0} />
@@ -734,21 +895,24 @@ const ThreeCanvas = ({ mode }) => {
         <Suspense fallback={null}>
           {modelUrl && (
             <group>
-              <ModelViewer
-                key={modelUrl}
-                url={modelUrl}
-                onModelReady={handleModelReady}
-              />
+              <ErrorBoundary>
+                <ModelViewer
+                  key={modelUrl}
+                  url={modelUrl}
+                  onModelReady={handleModelReady}
+                  setSceneRef={(scene) => sceneHelpersRef.current = scene}
+                />
+              </ErrorBoundary>
             </group>
           )}
         </Suspense>
 
-        <MeasurementMarkers />
+        <MeasurementMarkers sceneRef={sceneHelpersRef} />
 
         <CameraController
           onReady={setCameraControls}
           autoRotate={autoRotate}
-          enableDamping={enableDamping}
+
           modelMaxDim={modelMaxDim}
         />
       </Canvas>
