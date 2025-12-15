@@ -48,6 +48,9 @@ const useUIStore = create((set) => ({
   wingMode: false,
   setWingMode: (mode) => set({ wingMode: mode }),
 
+  optimizedValues: null,
+  setOptimizedValues: (values) => set({ optimizedValues: values }),
+
 
 
   measureMode: false,
@@ -104,6 +107,10 @@ const useUIStore = create((set) => ({
   // Smart Camera View Requests (Robust)
   requestedView: null,
   setRequestedView: (view) => set({ requestedView: view }),
+
+  // Specific Color Request
+  requestedColor: null,
+  setRequestedColor: (color) => set({ requestedColor: color }),
 }));
 
 

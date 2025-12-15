@@ -1,7 +1,7 @@
 # main.py (Modularized)
 import os
 import sys
-# FORCE RELOAD TRIGGER
+# FORCE RELOAD TRIGGER 5
 import json
 import time
 import logging
@@ -308,7 +308,9 @@ async def run_command(request: Request):
                  
                  # Sort by score (lower is better)
                  candidates.sort(key=lambda x: x.get("score", 9999))
+                 candidates.sort(key=lambda x: x.get("score", 9999))
                  candidates = candidates[:3] # Top 3 global
+                 targeted_shape = "Mixed Shapes/Comparison"
              else:
                  # Single shape (inferred from text)
                  logging.info("Triggering Structural RL Optimizer...")
@@ -376,6 +378,18 @@ async def run_command(request: Request):
         return JSONResponse({"mode": "explode", "output": "💥 Exploding the model..."})
 
     # 1.5.5 Apply Colors
+    # 1.5.5 Apply Colors
+    color_match = re.search(r"apply\s+(?:the\s+)?(\w+)\s+(?:color|colour)", s)
+    if color_match:
+         color_name = color_match.group(1).lower()
+         # Check if it's a known color or just generic "unique"/"random"
+         if color_name not in ("unique", "random", "different"):
+              return JSONResponse({
+                  "mode": "apply_single_color", 
+                  "color": color_name,
+                  "output": f"🎨 Applying {color_name} color to the model..."
+              })
+
     if "color" in s or ("apply" in s and "paint" in s):
         return JSONResponse({"mode": "apply_colors", "output": "🎨 Applying unique colors to the model..."})
 
@@ -392,7 +406,7 @@ async def run_command(request: Request):
         })
         
     # 2. BOM Check (Snippet Logic)
-    bom_triggers = ("bom", "bill of materials", "bill-of-materials", "generate bom", "create bom", "export bom", "generate bill")
+    bom_triggers = ("bom", "bill of materials", "bill-of-materials", "generate bom", "create bom","Load Dirt Bike Catpart", "export bom", "generate bill")
     if any(k in s for k in bom_triggers):
         # Snippet logic for handling BOM
         uploaded_path = (data.get("uploaded_file") or data.get("uploaded_path") or data.get("uploaded") or data.get("input"))
@@ -445,6 +459,7 @@ async def run_command(request: Request):
             "stdout": out,
             "stderr": err,
             "error": error,
+            "time": dur,
             "downloads": {"csv": csv_url, "xlsx": xlsx_url, "pdf": pdf_url},
             "output": ("✅ BOM generated successfully." if not error else f"❌ BOM generation failed: {error}")
         })
@@ -539,7 +554,8 @@ async def execute_catia_script(request: Request):
         logging.info(f"Executing {script_name} with params: {temp_params_path}")
 
         # Run Script
-        args = ["--params", str(temp_params_path)]
+        # catia_create_parts_dynamic.py expects JSON file as direct argument if not using --flags
+        args = [str(temp_params_path)]
         out, err, dur, error = run_script_with_timer(str(script_path), args=args, timeout=300)
 
         # Cleanup handled by script usually, but we can double check or rely on script
@@ -547,9 +563,9 @@ async def execute_catia_script(request: Request):
 
         msg = f"✅ Executed {script_name}\n"
         if out: msg += f"Output: {out}\n"
-        if error: msg = f"❌ Error: {error}\nOutput: {out}"
+        if error: msg = f"❌ Error: {error}\nOutput: {out}\nStderr: {err}"
 
-        return JSONResponse({"success": not error, "output": msg, "time": dur})
+        return JSONResponse({"success": not error, "output": msg, "message": msg, "time": dur})
 
     except Exception as e:
         logging.error(f"Execution failed: {e}")
@@ -562,11 +578,19 @@ async def upload_file(
     convert: str = Form(None)
 ):
     try:
-        ext = os.path.splitext(file.filename)[1].lower()
-        safe_name = f"{uuid.uuid4()}{ext}"
+        # User Requirement: Preserve filename for CATIA assembly links
+        # ext = os.path.splitext(file.filename)[1].lower()
+        # safe_name = f"{uuid.uuid4()}{ext}"
+        
+        # Simple sanitization to prevent directory traversal
+        filename = os.path.basename(file.filename)
+        safe_name = filename 
+        
         upload_dir = STATIC_DIR / "uploads"
         upload_dir.mkdir(parents=True, exist_ok=True)
         file_path = upload_dir / safe_name
+        
+        # Determine if we need to handle duplicates? For local CAD, overwriting is often desired to update parts.
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
@@ -577,8 +601,8 @@ async def upload_file(
         if type.lower() == "bom":
              content = file_path.read_text(errors='ignore')
              return JSONResponse({"url": file_url, "message": f"BOM Uploaded. Preview:\n{content[:200]}..."})
-
-        # Return filename for optional conversion
+             
+        # Return filename (now matches original)
         return JSONResponse({"url": file_url, "message": msg, "filename": safe_name})
         
     except Exception as e:
@@ -737,6 +761,32 @@ async def download_pdf():
     files = sorted([p for p in OUTPUTS_DIR.iterdir() if p.suffix.lower() == ".pdf"], key=lambda p: p.stat().st_mtime, reverse=True)
     if not files: return JSONResponse({"error": "PDF file not found"}, status_code=404)
     return FileResponse(str(files[0]), media_type="application/pdf", filename=files[0].name)
+
+@main_router.post("/open_in_catia")
+async def open_in_catia(request: Request):
+    try:
+        data = await request.json()
+        filename = data.get("filename")
+        if not filename:
+             return JSONResponse({"success": False, "message": "No filename provided"})
+             
+        # Resolve path in uploads
+        file_path = STATIC_DIR / "uploads" / filename
+        if not file_path.exists():
+             return JSONResponse({"success": False, "message": f"File not found: {filename}"})
+             
+        script_path = SCRIPTS_DIR / "open_file_in_catia.py"
+        args = ["--path", str(file_path)]
+        
+        out, err, dur, error = run_script_with_timer(str(script_path), args=args, timeout=60)
+        
+        if error:
+             return JSONResponse({"success": False, "message": f"CATIA Error: {error}"})
+             
+        return JSONResponse({"success": True, "message": "File opened in CATIA."})
+        
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)})
 
 @main_router.post("/clear_outputs")
 async def clear_outputs():

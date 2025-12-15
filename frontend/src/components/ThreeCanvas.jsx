@@ -232,7 +232,38 @@ const MeasurementMarkers = () => {
 function ModelViewer({ url, onModelReady }) {
   const { scene } = useGLTF(url);
   const clonedScene = React.useMemo(() => scene.clone(), [scene]);
-  const { measureMode, addMeasurePoint, explodeMode, colorMode, transformMode } = useUIStore();
+  // --- FEATURE: Color Mode ---
+  const { measureMode, addMeasurePoint, explodeMode, colorMode, transformMode, requestedColor } = useUIStore(); // Added requestedColor
+
+  useEffect(() => {
+    if (!isInitialized.current) return;
+
+    clonedScene.traverse((child) => {
+      if (child.isMesh) {
+        if (colorMode) {
+          if (requestedColor) {
+            // Case A: Specific Color Request (e.g. "Apply red")
+            // THREE.Color can parse names like 'red', 'blue', 'green'
+            child.material.color.set(requestedColor);
+          } else {
+            // Case B: Generic "Apply Color" -> Unique/Random Colors
+            // Use simple random generation for distinct colors per part
+            const h = Math.random();
+            const s = 0.85; // High saturation
+            const l = 0.55; // Medium lightness
+            child.material.color.setHSL(h, s, l);
+          }
+        } else {
+          // Restore Original
+          const orig = originalMaterials.current.get(child.uuid);
+          if (orig && orig.color) {
+            child.material.color.copy(orig.color);
+          }
+        }
+        child.material.needsUpdate = true;
+      }
+    });
+  }, [colorMode, clonedScene, requestedColor]);
   const { camera, scene: threeScene } = useThree();
   const raycaster = useRef(new THREE.Raycaster());
 
@@ -370,25 +401,22 @@ function ModelViewer({ url, onModelReady }) {
   useEffect(() => {
     if (!isInitialized.current) return;
 
-    // Helper: Deterministic Hash from String (DJB2 variant or similar simple)
-    const getHashColor = (str) => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      // Map hash to HSL Hue (0-1)
-      const h = Math.abs(hash % 360) / 360;
-      // Use Golden Ratio to spread colors if needed, but hash is okay
-      return new THREE.Color().setHSL(h, 0.7, 0.5); // S=0.7, L=0.5 for nice pastel/vivid
-    };
+    console.log("Color Mode Active:", colorMode, "Requested Color:", requestedColor);
 
     clonedScene.traverse((child) => {
       if (child.isMesh) {
         if (colorMode) {
-          // Deterministic unique color based on UUID/Name
-          const uniqueId = child.uuid || child.name || Math.random().toString();
-          const uniqueColor = getHashColor(uniqueId);
-          child.material.color.copy(uniqueColor);
+          if (requestedColor) {
+            // Case A: Specific Color Request (e.g. "Apply red")
+            child.material.color.set(requestedColor);
+          } else {
+            // Case B: Generic "Apply Color" -> Unique/Random Colors
+            // Use simple random generation for distinct colors per part
+            const h = Math.random();
+            const s = 0.85;
+            const l = 0.55;
+            child.material.color.setHSL(h, s, l);
+          }
         } else {
           // Restore
           const orig = originalMaterials.current.get(child.uuid);
@@ -399,7 +427,7 @@ function ModelViewer({ url, onModelReady }) {
         child.material.needsUpdate = true;
       }
     });
-  }, [colorMode, clonedScene]);
+  }, [colorMode, clonedScene, requestedColor]);
 
   // --- FEATURE: Measurement / Click Handling (User's Logic) ---
   const handleClick = (e) => {

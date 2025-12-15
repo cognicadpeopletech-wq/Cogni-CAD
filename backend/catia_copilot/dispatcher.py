@@ -25,7 +25,12 @@ def run_script_with_timer(script_path: str, args: Optional[List[str]] = None, ti
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         elapsed = round(time.time() - start, 3)
         stdout, stderr = proc.stdout.strip(), proc.stderr.strip()
-        return stdout, stderr, elapsed, None
+        
+        error_msg = None
+        if proc.returncode != 0:
+            error_msg = f"Exit Code {proc.returncode}"
+            
+        return stdout, stderr, elapsed, error_msg
     except subprocess.TimeoutExpired:
         return "", "", round(time.time() - start, 3), f"❌ Timeout after {timeout}s"
     except Exception as e:

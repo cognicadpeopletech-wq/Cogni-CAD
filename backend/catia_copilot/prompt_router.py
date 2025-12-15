@@ -58,6 +58,95 @@ def route_explicit_command(command_raw: str, base_dir: Path):
     
     script_to_run = None
     script_flags = []
+
+    # --- 1. Specific Routing Overrides (Priority over Intents) ---
+
+    # J) Diagonal Holes on Disk (Specific)
+    if matches(r"diagonal") and matches(r"disk"):
+        script_to_run = "diagonal_on_disk.py"
+        flags = []
+        
+        # Diameter
+        d_val = extract_value_for_keyword(command_raw, ["diameter", "dia", "d"])
+        if d_val: flags.extend(["--diameter", str(d_val)])
+            
+        # Thickness
+        t_val = extract_value_for_keyword(command_raw, ["thickness", "thick", "t"])
+        if t_val: flags.extend(["--T", str(t_val)])
+            
+        # Count (N holes)
+        n_match = re.search(r"(\d+)\s*(?:diagonal)?\s*holes?", command_raw, re.IGNORECASE)
+        if n_match:
+            flags.extend(["--n", n_match.group(1)])
+            
+        # Offset
+        off_val = extract_value_for_keyword(command_raw, ["offset", "inset"])
+        if off_val: flags.extend(["--offset", str(off_val)])
+            
+        # Hole Dia context check
+        hd_context = re.search(r"offset\s*\d+(?:\.\d+)?\s*(?:dia(?:meter)?)?\s*(\d+(?:\.\d+)?)", command_raw, re.IGNORECASE)
+        if hd_context:
+            flags.extend(["--dia", hd_context.group(1)])
+        else:
+             # Fallback: check valid single "dia" that isn't the main disk dia
+             pass
+
+        script_flags = flags
+        return script_to_run, script_flags
+
+        script_flags = flags
+        return script_to_run, script_flags
+
+    # M) Circular Squared Disk (Specific)
+    if matches(r"disk") and (matches(r"square.*holes?") or matches(r"squared.*holes?")):
+        script_to_run = "circular_squared_disk.py"
+        flags = []
+        
+        # Diameter
+        d_val = extract_value_for_keyword(command_raw, ["diameter", "dia", "d"])
+        if d_val: flags.extend(["--diameter", str(d_val)])
+            
+        # Thickness
+        t_val = extract_value_for_keyword(command_raw, ["thickness", "thick", "t"])
+        if t_val: flags.extend(["--T", str(t_val)])
+            
+        # Extract Square Holes: "squared holes 20 at (0,0) and 10 at (20,30)"
+        sq_hole_pattern = r"(\d+(?:\.\d+)?)\s*(?:mm)?\s*(?:(?:square|squared)?\s*holes?)?\s*at\s*\((-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\)"
+        matches_sq = re.findall(sq_hole_pattern, command_raw, re.IGNORECASE)
+        
+        for (side, x, y) in matches_sq:
+            flags.append("--hole")
+            flags.append(f"{x},{y},{side}")
+
+        script_flags = flags
+        return script_to_run, script_flags
+
+    # H) Create Disk (Dynamic with Holes)
+    # Ensure we don't capture specific topology requests (diagonal, perimeter, etc.) which should fall through
+    elif (matches(r"^create\s+disk") or (matches(r"\bdisk\b") and matches(r"diameter") and matches(r"thickness"))) \
+         and not matches(r"diagonal") and not matches(r"perimeter") and not matches(r"equidistant") and not matches(r"topology"):
+        script_to_run = "circular_disk_dynamic.py"
+        
+        # Extract Diameter
+        d_val = extract_value_for_keyword(command_raw, ["diameter", "dia", "d"])
+        
+        # Extract Thickness
+        t_val = extract_value_for_keyword(command_raw, ["thickness", "thick", "t"])
+
+        flags = []
+        if d_val: flags.extend(["--diameter", str(d_val)])
+        if t_val: flags.extend(["--T", str(t_val)])
+        
+        # Extract Holes: "16 diameter at (0,0)"
+        hole_pattern = r"(\d+(?:\.\d+)?)\s*(?:mm)?\s*(?:dia(?:meter)?)?\s*(?:hole)?\s*at\s*\((-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\)"
+        matches_holes = re.findall(hole_pattern, command_raw, re.IGNORECASE)
+        
+        for (dia, x, y) in matches_holes:
+            flags.append("--hole")
+            flags.append(f"{x},{y},{dia}")
+
+        script_flags = flags
+        return script_to_run, script_flags
     
     # 0. Check Intents (JSON-based)
     intents = load_intents(base_dir)
@@ -249,10 +338,36 @@ def route_explicit_command(command_raw: str, base_dir: Path):
              return None
 
          # Radius
-         rad = get_val(command_raw, [r"radius\s*(\d+(\.\d+)?)", r"dia(?:meter)?\s*(\d+(\.\d+)?)"])
+         # Radius (Exclude "center hole/pocket" context)
+         # Using negative lookbehind for 'center ' or 'hole ' is tricky with variable spacing.
+         # Instead, we'll strip known 'center ...' phrases first or use a stricter regex.
+         # Regex: Match radius/dia NOT preceded by "center " (approx)
+         
+         # Better approach: Extract specific features first (Center Hole), then check global?
+         # But we iterate sequentially.
+         # Let's use a regex that matches start of string or space, ignoring specific prefixes.
+         
+         # Filter out "center pocket diameter" from consideration for GLOBAL radius
+         # We can simple check if the match is part of "center ...".
+         # Or better: 
+         def get_global_rad(text):
+              # Remove "center" phrases temporarily
+              tmp = re.sub(r"center\s*(?:pocket|hole)\s*(?:dia(?:meter)?|radius)\s*\d+(?:\.\d+)?", "", text, flags=re.IGNORECASE)
+              tmp = re.sub(r"lug\s*(?:hole)?\s*(?:dia(?:meter)?|radius)\s*\d+(?:\.\d+)?", "", tmp, flags=re.IGNORECASE)
+              return get_val(tmp, [r"radius\s*(\d+(\.\d+)?)", r"dia(?:meter)?\s*(\d+(\.\d+)?)"])
+
+         rad = get_global_rad(command_raw)
          if rad:
              flags.append("--circle-radius")
-             flags.append(str(float(rad)) if "radius" in command_raw else str(float(rad)/2))
+             # If "diameter" keyword used in the MATCHED string part? 
+             # get_val returns just the number. We need to know if it was diameter or radius.
+             # Re-checking the temp string is safest.
+             tmp_check = re.sub(r"center\s*(?:pocket|hole)\s*(?:dia(?:meter)?|radius)\s*\d+(?:\.\d+)?", "", command_raw, flags=re.IGNORECASE)
+             is_diameter = re.search(r"dia(?:meter)?\s*" + re.escape(rad), tmp_check, re.IGNORECASE)
+             
+             val = float(rad)
+             if is_diameter: val /= 2.0
+             flags.append(str(val))
 
          # Pad Height
          ph = get_val(command_raw, [r"pad\s*height\s*(\d+(\.\d+)?)", r"height\s*(\d+(\.\d+)?)"])
@@ -298,7 +413,7 @@ def route_explicit_command(command_raw: str, base_dir: Path):
         json_params = json.dumps(cfg)
         script_flags = ["--params", json_params]
 
-    # I) Unified Topology Routing (Priority: Plate > Disk)
+    # K) Unified Topology Routing (Priority: Plate > Disk)
     elif matches(r"\b(equidistant|diagonals?|perimeters?|circular topology|holes? on a \d+ mm diameter)\b") or matches(r"along\s+[xy]"):
         
         # 1. Plate Context (Stronger match if "plate"/"block" present)

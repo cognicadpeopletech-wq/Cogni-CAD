@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ChatPanel from './components/ChatPanel';
 import ThreeCanvas from './components/ThreeCanvas';
 import WingHUD from './components/WingHUD';
+import OptimizedValuesPanel from './components/OptimizedValuesPanel';
 import useUIStore from './store/uiStore';
 import './App.css';
 
@@ -39,6 +40,7 @@ function App() {
 
                     <ThreeCanvas mode={mode} />
                     <WingHUD />
+                    <OptimizedValuesPanel />
                 </div>
             </div>
         </div>
