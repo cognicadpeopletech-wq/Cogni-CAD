@@ -1301,7 +1301,7 @@ const ChatPanel = ({ mode, setMode, onTogglePanel, panelState, setPanelState }) 
                 if (viewDirection === 'side') viewDirection = 'right';
 
                 useUIStore.getState().setRequestedView(viewDirection);
-                setPanelState('right-maximized');
+                setPanelState('default');
                 addMessage(` Switching to ${viewDirection.charAt(0).toUpperCase() + viewDirection.slice(1)} View`, 'bot');
                 setLoading(false);
                 return;
